@@ -1,0 +1,209 @@
+:root {
+    /* Paleta Corporativa y Lean */
+    --primary: #005A9C;      /* Azul corporativo */
+    --primary-hover: #00457A;
+    --success: #28a745;      /* Verde Lean */
+    --warning: #ffc107;      /* Amarillo */
+    --danger: #dc3545;       /* Rojo faltante */
+    
+    /* Neutrales (Fluent Design) */
+    --bg-base: #f3f2f1;      /* Fondo general */
+    --bg-surface: #ffffff;   /* Fondo de tarjetas */
+    --text-primary: #323130; /* Texto principal */
+    --text-secondary: #605e5c;/* Texto secundario */
+    --border: #edebe9;       /* Bordes sutiles */
+    --border-strong: #c8c6c4;
+    
+    /* Layout */
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    
+    /* Tipografía */
+    --font-family: 'Inter', sans-serif;
+    
+    /* Sombras y Radios */
+    --shadow-sm: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+    --shadow-md: 0 3.2px 7.2px 0 rgba(0,0,0,0.132), 0 0.6px 1.8px 0 rgba(0,0,0,0.108);
+    --radius: 6px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* App Container */
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+}
+
+.sidebar-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background-color: var(--primary);
+    color: white;
+}
+
+.sidebar-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.role-selector {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.role-selector select {
+    width: 100%;
+    margin-top: 5px;
+    padding: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: var(--font-family);
+}
+
+.nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.nav-btn {
+    width: 100%;
+    text-align: left;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s, color 0.2s;
+    font-family: var(--font-family);
+}
+
+.nav-btn i {
+    margin-right: 12px;
+    width: 20px;
+    height: 20px;
+    color: var(--text-secondary);
+}
+
+.nav-btn:hover {
+    background-color: var(--bg-base);
+}
+
+.nav-btn.active {
+    background-color: var(--primary);
+    color: white;
+}
+
+.nav-btn.active i {
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Top Header */
+.top-header {
+    height: var(--header-height);
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    box-shadow: var(--shadow-sm);
+    z-index: 5;
+}
+
+.breadcrumb {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.header-alerts {
+    display: flex;
+    gap: 15px;
+}
+
+/* Views */
+.views-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.view-section {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.view-section.hidden {
+    display: none;
+}
+
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.view-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Utilities */
+.hidden {
+    display: none !important;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ocultar elementos para rol Usuario */
+body[data-role="user"] [data-admin-only="true"] {
+    display: none !important;
+}

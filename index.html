@@ -1,0 +1,323 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lean Rewards Inventory</title>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            alert("Error en linea " + line + ": " + msg + "\n(Por favor compÃƒÂ¡rteme este mensaje de error)");
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            alert("Promesa rechazada: " + (event.reason && event.reason.message ? event.reason.message : event.reason));
+        });
+    </script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- Dependencies (Local) -->
+    <script src="lib/supabase.js"></script>
+    <script src="lib/html5-qrcode.min.js"></script>
+    <script src="lib/qrcode.min.js"></script>
+    <script src="lib/chart.umd.min.js"></script>
+    <script src="lib/lucide.min.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app" class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i data-lucide="package" class="logo-icon"></i>
+                <h2>Lean Rewards</h2>
+            </div>
+            
+            <!-- User Role Switcher (Mock for Demo) -->
+            <div class="role-selector">
+                <label>Rol actual:</label>
+                <select id="roleSelect">
+                    <option value="admin">Administrador</option>
+                    <option value="user">Usuario</option>
+                </select>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-target="dashboard">
+                    <i data-lucide="layout-dashboard"></i> Dashboard
+                </button>
+                <button class="nav-btn" data-target="gallery">
+                    <i data-lucide="image"></i> GalerÃƒÂ­a Visual
+                </button>
+                <button class="nav-btn" data-target="catalog" data-admin-only="true">
+                    <i data-lucide="database"></i> CatÃƒÂ¡logo
+                </button>
+                <button class="nav-btn" data-target="entries" data-admin-only="true">
+                    <i data-lucide="arrow-down-to-line"></i> Entradas
+                </button>
+                <button class="nav-btn" data-target="exits">
+                    <i data-lucide="arrow-up-right"></i> Salidas (Premios)
+                </button>
+                <button class="nav-btn" data-target="qr-scan">
+                    <i data-lucide="qr-code"></i> EscÃƒÂ¡ner QR
+                </button>
+                <button class="nav-btn" data-target="audit" data-admin-only="true">
+                    <i data-lucide="clipboard-check"></i> AuditorÃƒÂ­a
+                </button>
+                <button class="nav-btn" data-target="history">
+                    <i data-lucide="history"></i> Historial
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header for alerts -->
+            <header class="top-header" id="topHeader">
+                <div class="breadcrumb">
+                    <span id="currentViewTitle">Dashboard</span>
+                </div>
+                <div class="header-alerts" id="headerAlerts">
+                    <!-- Low stock / Out of stock indicators injected here -->
+                </div>
+            </header>
+
+            <!-- Views Container -->
+            <div id="viewsContainer" class="views-container">
+                
+                <!-- View: Dashboard -->
+                <section id="dashboard" class="view-section active">
+                    <div class="dashboard-grid" id="dashboardContent">
+                        <!-- Chart and stats injected via JS -->
+                    </div>
+                </section>
+
+                <!-- View: Gallery -->
+                <section id="gallery" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Inventario Disponible</h2>
+                        <div class="filters">
+                            <input type="text" id="gallerySearch" placeholder="Buscar premio..." class="input-modern">
+                        </div>
+                    </div>
+                    <div id="galleryGrid" class="gallery-grid"></div>
+                </section>
+
+                <!-- View: Catalog -->
+                <section id="catalog" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>CatÃƒÂ¡logo de Productos</h2>
+                        <div style="display:flex; gap:10px;">
+                            <button id="btnImportExcel" class="btn btn-secondary">
+                                <i data-lucide="file-spreadsheet"></i> Importar Excel
+                            </button>
+                            <input type="file" id="fileExcelImport" accept=".xlsx, .xls" style="display:none;">
+                            
+                            <button id="btnNewProduct" class="btn btn-primary">
+                                <i data-lucide="plus"></i> Nuevo Producto
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Foto</th>
+                                    <th>Producto</th>
+                                    <th>CategorÃƒÂ­a</th>
+                                    <th>Costo U.</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catalogTableBody"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="view-header" style="margin-top: 30px;">
+                        <h2>Variantes y CÃƒÂ³digos QR</h2>
+                        <button id="btnPrintAllQRs" class="btn btn-secondary">
+                            <i data-lucide="printer"></i> Imprimir Todos los QRs
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Color/Variante</th>
+                                    <th>Stock</th>
+                                    <th>MÃƒÂ­nimo</th>
+                                    <th>Estatus</th>
+                                    <th>QR</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variantsTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- View: Entries (Entradas) -->
+                <section id="entries" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Registrar Entradas (Compras/ReposiciÃƒÂ³n)</h2>
+                    </div>
+                    <div class="card-form">
+                        <form id="entryForm">
+                            <div class="form-group">
+                                <label>Producto / Variante</label>
+                                <select id="entryVariantSelect" required class="input-modern"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cantidad Agregada</label>
+                                <input type="number" id="entryQuantity" min="1" required class="input-modern">
+                            </div>
+                            <div class="form-group">
+                                <label>Comentarios</label>
+                                <input type="text" id="entryComments" placeholder="Ej. Compra OC-1234" class="input-modern">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Registrar Entrada</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- View: Exits (Salidas) -->
+                <section id="exits" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Registrar Salida (Entregar Premio)</h2>
+                        <button id="btnExitByQR" class="btn btn-secondary">
+                            <i data-lucide="qr-code"></i> Usar EscÃƒÂ¡ner QR
+                        </button>
+                    </div>
+                    <div class="card-form">
+                        <form id="exitForm">
+                            <div class="form-group">
+                                <label>SelecciÃƒÂ³n Manual</label>
+                                <select id="exitVariantSelect" required class="input-modern"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cantidad a Retirar</label>
+                                <input type="number" id="exitQuantity" min="1" required class="input-modern">
+                            </div>
+                            <div class="form-group">
+                                <label>Motivo / Ganador</label>
+                                <input type="text" id="exitComments" placeholder="Ej. Premio Kaizen Mes Abril" required class="input-modern">
+                            </div>
+                            <button type="submit" class="btn btn-danger">Descontar Inventario</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- View: QR Scan -->
+                <section id="qr-scan" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>EscÃƒÂ¡ner QR (TransacciÃƒÂ³n RÃƒÂ¡pida)</h2>
+                    </div>
+                    <div class="qr-scanner-container">
+                        <p style="text-align:center; margin-bottom: 20px;">Escanea el cÃƒÂ³digo QR de un SKU para realizar un retiro rÃƒÂ¡pido.</p>
+                        <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);"></div>
+                        <div id="qr-result" class="qr-result-card hidden">
+                            <!-- Injected after successful scan -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View: Audit -->
+                <section id="audit" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>AuditorÃƒÂ­a de Inventario FÃƒÂ­sico</h2>
+                        <button id="btnStartAudit" class="btn btn-primary">Iniciar Nueva AuditorÃƒÂ­a</button>
+                    </div>
+                    <div id="auditActiveArea" class="hidden">
+                        <div class="audit-scanner card">
+                            <p><strong>1. Escanea los cÃƒÂ³digos QR</strong></p>
+                            <div id="audit-qr-reader" style="width: 100%; max-width: 400px; margin: 10px auto; border-radius: 8px; overflow: hidden;"></div>
+                            
+                            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+                            
+                            <p><strong>2. O SelecciÃƒÂ³n Manual</strong></p>
+                            <div class="audit-manual-entry" style="display:flex; gap:10px; align-items:center;">
+                                <select id="auditVariantSelect" class="input-modern" style="flex:1;"></select>
+                                <input type="number" id="auditManualQty" class="input-modern" style="width: 80px;" value="1" min="1">
+                                <button id="btnAuditManualAdd" class="btn btn-secondary">Agregar</button>
+                            </div>
+                        </div>
+                        <div class="table-container mt-20 card">
+                            <h3>Conteo FÃƒÂ­sico Actual</h3>
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Variante</th>
+                                        <th>Cantidad Contada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditCountTableBody"></tbody>
+                            </table>
+                            <div style="margin-top:20px; text-align:right;">
+                                <button id="btnFinishAudit" class="btn btn-success">Finalizar y Comparar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="auditResultsArea" class="hidden card">
+                        <!-- Injected results -->
+                    </div>
+                </section>
+
+                <!-- View: History -->
+                <section id="history" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Historial y Trazabilidad</h2>
+                        <button id="btnExportHistory" class="btn btn-secondary">Exportar CSV</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Tipo</th>
+                                    <th>Producto / Variante</th>
+                                    <th>Cant.</th>
+                                    <th>Comentarios</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modalsContainer"></div>
+
+    <!-- Print Area -->
+    <div id="printArea" class="print-area hidden"></div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- App Scripts (Loaded Sequentially) -->
+    <script src="js/database.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/modules/inventory.js"></script>
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/catalog.js"></script>
+    <script src="js/modules/gallery.js"></script>
+    <script src="js/modules/qr.js"></script>
+    <script src="js/modules/audit.js"></script>
+    <script src="js/modules/history.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+
