@@ -8,89 +8,105 @@ async function initCatalog() {
 
     // Event listener for New Product
     const btnNewProduct = document.getElementById('btnNewProduct');
-    // Eliminar listeners previos para evitar duplicados en SPA
-    const newBtnClone = btnNewProduct.cloneNode(true);
-    btnNewProduct.parentNode.replaceChild(newBtnClone, btnNewProduct);
-    
-    newBtnClone.addEventListener('click', () => {
-        const modalForm = `
-            <form id="formNewProduct" style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group">
-                    <label>Nombre del Producto</label>
-                    <input type="text" id="pName" class="input-modern" required>
-                </div>
-                <div class="form-group">
-                    <label>Categoría</label>
-                    <input type="text" id="pCategory" class="input-modern" required>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Descripción</label>
-                    <input type="text" id="pDesc" class="input-modern">
-                </div>
-                <div class="form-group">
-                    <label>Color (Variante)</label>
-                    <input type="text" id="pColor" class="input-modern" required>
-                </div>
-                <div class="form-group">
-                    <label>Costo Unitario ($)</label>
-                    <input type="number" id="pCost" class="input-modern" required min="0" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Cantidad Inicial</label>
-                    <input type="number" id="pStock" class="input-modern" required min="0">
-                </div>
-                <div class="form-group">
-                    <label>Stock Mínimo</label>
-                    <input type="number" id="pMinStock" class="input-modern" required min="1">
-                </div>
-                <div class="form-group">
-                    <label>Ubicación Física</label>
-                    <input type="text" id="pLocation" class="input-modern">
-                </div>
-                <div class="form-group">
-                    <label>Fotografía del producto</label>
-                    <input type="file" id="pPhoto" class="input-modern" accept="image/*">
-                </div>
-                <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; margin-top:10px;">Guardar Producto</button>
-            </form>
-        `;
-        
-        const closeModal = openModal('modalNewProduct', 'Crear Nuevo Producto', modalForm);
-        
-        document.getElementById('formNewProduct').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('pName').value;
-            const category = document.getElementById('pCategory').value;
-            const description = document.getElementById('pDesc').value;
-            const color = document.getElementById('pColor').value;
-            const cost = parseFloat(document.getElementById('pCost').value);
-            const stock = parseInt(document.getElementById('pStock').value);
-            const minStock = parseInt(document.getElementById('pMinStock').value);
-            const location = document.getElementById('pLocation').value;
+    if (btnNewProduct) {
+        btnNewProduct.addEventListener('click', async () => {
+            const providers = await db.providers.toArray();
+            let providerOptions = '<option value="">Sin Proveedor</option>';
+            providers.forEach(p => {
+                providerOptions += `<option value="${p.id}">${p.name}</option>`;
+            });
+
+            const modalForm = `
+                <form id="formNewProduct" style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Nombre del Producto *</label>
+                        <input type="text" id="pName" class="input-modern" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría *</label>
+                        <select id="pCategory" class="input-modern" required>
+                            <option value="Premios Lean">Premios Lean</option>
+                            <option value="Papelería">Papelería</option>
+                            <option value="Tecnología">Tecnología</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Descripción</label>
+                        <input type="text" id="pDesc" class="input-modern">
+                    </div>
+                    <div class="form-group">
+                        <label>Proveedor</label>
+                        <select id="pProvider" class="input-modern">
+                            ${providerOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Color (Variante) *</label>
+                        <input type="text" id="pColor" class="input-modern" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Costo Monetario ($)</label>
+                        <input type="number" id="pCost" class="input-modern" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Costo en Puntos (Si es Premio)</label>
+                        <input type="number" id="pPointsCost" class="input-modern" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad Inicial</label>
+                        <input type="number" id="pStock" class="input-modern" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Mínimo</label>
+                        <input type="number" id="pMinStock" class="input-modern" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Máximo</label>
+                        <input type="number" id="pMaxStock" class="input-modern" required min="1" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Ubicación Física</label>
+                        <input type="text" id="pLocation" class="input-modern">
+                    </div>
+                    <div class="form-group">
+                        <label>Fotografía del producto</label>
+                        <input type="file" id="pPhoto" class="input-modern" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; margin-top:10px;">Guardar Producto</button>
+                </form>
+            `;
             
-            const fileInput = document.getElementById('pPhoto');
-            let photoBase64 = '';
+            const closeModal = openModal('modalNewProduct', 'Crear Nuevo Producto', modalForm);
             
-            if (fileInput.files.length > 0) {
-                try { photoBase64 = await fileToBase64(fileInput.files[0]); }
-                catch(err) { showToast('Error al leer imagen', 'error'); return; }
-            }
-            
-            try {
-                const pId = await db.products.add({ name, category, description, provider: '', cost, location, status: 'Disponible' });
-                const sku = `PRD-${pId}-${color.substring(0,3).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
-                const vId = await db.variants.add({
-                    productId: pId, colorName: color, stock: stock, minStock: minStock, sku: sku, photo: photoBase64
-                });
+            document.getElementById('formNewProduct').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('pName').value;
+                const category = document.getElementById('pCategory').value;
+                const description = document.getElementById('pDesc').value;
+                const providerId = parseInt(document.getElementById('pProvider').value) || null;
+                const color = document.getElementById('pColor').value;
+                const cost = parseFloat(document.getElementById('pCost').value) || 0;
+                const pointsCost = parseInt(document.getElementById('pPointsCost').value) || 0;
+                const stock = parseInt(document.getElementById('pStock').value) || 0;
+                const minStock = parseInt(document.getElementById('pMinStock').value) || 1;
+                const maxStock = parseInt(document.getElementById('pMaxStock').value) || 50;
+                const location = document.getElementById('pLocation').value;
                 
-                if (stock > 0) {
-                    await db.transactions.add({
-                        date: new Date().toISOString(), type: 'IN', variantId: vId, userId: window.getCurrentUser(), quantity: stock, comments: 'Inventario inicial (Creación)'
-                    });
+                const fileInput = document.getElementById('pPhoto');
+                let photoBase64 = '';
+                
+                if (fileInput.files.length > 0) {
+                    try { photoBase64 = await fileToBase64(fileInput.files[0]); }
+                    catch(err) { showToast('Error al leer imagen', 'error'); return; }
                 }
                 
-                showToast('Producto registrado exitosamente');
-                closeModal();
+                try {
+                    const pId = await db.products.add({ name, category, description, providerId, cost, pointsCost, location, status: 'Disponible' });
+                    
+                    const sku = `PRD-${pId}-${color.substring(0,3).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
+                    const vId = await db.variants.add({
+                        productId: pId, colorName: color, stock: stock, minStock: minStock, maxStock: maxStock, sku: sku, photo: photoBase64
+                    });
                 initCatalog();
             } catch (err) {
                 showToast('Error al registrar', 'error');
@@ -169,19 +185,32 @@ async function initCatalog() {
     }
 
     const btnPrintAllQRs = document.getElementById('btnPrintAllQRs');
-    const printBtnClone = btnPrintAllQRs.cloneNode(true);
-    btnPrintAllQRs.parentNode.replaceChild(printBtnClone, btnPrintAllQRs);
-    printBtnClone.addEventListener('click', printAllQRs);
+    if (btnPrintAllQRs) {
+        const printBtnClone = btnPrintAllQRs.cloneNode(true);
+        btnPrintAllQRs.parentNode.replaceChild(printBtnClone, btnPrintAllQRs);
+        printBtnClone.addEventListener('click', printAllQRs);
+    }
+    
+    const catFilter = document.getElementById('catalogCategoryFilter');
+    if (catFilter) {
+        catFilter.addEventListener('change', renderCatalogTable);
+    }
 }
 
 async function renderCatalogTable() {
-    const products = await db.products.toArray();
+    let products = await db.products.toArray();
+    
+    const filterVal = document.getElementById('catalogCategoryFilter')?.value || 'ALL';
+    if (filterVal !== 'ALL') {
+        products = products.filter(p => p.category === filterVal);
+    }
+    
     const fullVariants = await getFullVariants();
     const tbody = document.getElementById('catalogTableBody');
     tbody.innerHTML = '';
     
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">No hay productos registrados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">No hay productos registrados en esta categoría.</td></tr>';
     } else {
         for (const p of products) {
             const productVariants = fullVariants.filter(v => v.productId === p.id);
@@ -270,6 +299,12 @@ window.editProduct = async (productId) => {
     const productVariants = allVariants.filter(v => v.productId === productId);
     const primaryVariant = productVariants.length > 0 ? productVariants[0] : null;
 
+    const providers = await db.providers.toArray();
+    let providerOptions = '<option value="">Sin Proveedor</option>';
+    providers.forEach(p => {
+        providerOptions += `<option value="${p.id}" ${p.id == product.providerId ? 'selected' : ''}>${p.name}</option>`;
+    });
+
     const modalForm = `
         <form id="formEditProduct" style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="form-group">
@@ -278,11 +313,22 @@ window.editProduct = async (productId) => {
             </div>
             <div class="form-group">
                 <label>Categoría</label>
-                <input type="text" id="eCategory" class="input-modern" value="${product.category}" required>
+                <select id="eCategory" class="input-modern" required>
+                    <option value="Premios Lean" ${product.category === 'Premios Lean' ? 'selected' : ''}>Premios Lean</option>
+                    <option value="Papelería" ${product.category === 'Papelería' ? 'selected' : ''}>Papelería</option>
+                    <option value="Tecnología" ${product.category === 'Tecnología' ? 'selected' : ''}>Tecnología</option>
+                </select>
             </div>
             <div class="form-group" style="grid-column: 1 / -1;">
                 <label>Descripción</label>
                 <input type="text" id="eDesc" class="input-modern" value="${product.description || ''}">
+            </div>
+            
+            <div class="form-group">
+                <label>Proveedor</label>
+                <select id="eProvider" class="input-modern">
+                    ${providerOptions}
+                </select>
             </div>
             
             ${primaryVariant ? `
@@ -298,13 +344,21 @@ window.editProduct = async (productId) => {
                 <label>Stock Mínimo (Alerta)</label>
                 <input type="number" id="eMinStock" class="input-modern" required min="1" value="${primaryVariant.minStock}">
             </div>
+            <div class="form-group">
+                <label>Stock Máximo</label>
+                <input type="number" id="eMaxStock" class="input-modern" required min="1" value="${primaryVariant.maxStock || 50}">
+            </div>
             ` : ''}
 
             <div class="form-group">
-                <label>Costo Unitario ($)</label>
-                <input type="number" id="eCost" class="input-modern" required min="0" step="0.01" value="${product.cost}">
+                <label>Costo Monetario ($)</label>
+                <input type="number" id="eCost" class="input-modern" required min="0" step="0.01" value="${product.cost || 0}">
             </div>
             <div class="form-group">
+                <label>Costo en Puntos</label>
+                <input type="number" id="ePointsCost" class="input-modern" required min="0" value="${product.pointsCost || 0}">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
                 <label>Ubicación Física</label>
                 <input type="text" id="eLocation" class="input-modern" value="${product.location || ''}">
             </div>
@@ -319,36 +373,59 @@ window.editProduct = async (productId) => {
         const name = document.getElementById('eName').value;
         const category = document.getElementById('eCategory').value;
         const description = document.getElementById('eDesc').value;
-        const cost = parseFloat(document.getElementById('eCost').value);
+        const providerId = parseInt(document.getElementById('eProvider').value) || null;
+        const cost = parseFloat(document.getElementById('eCost').value) || 0;
+        const pointsCost = parseInt(document.getElementById('ePointsCost').value) || 0;
         const location = document.getElementById('eLocation').value;
         
         try {
-            await db.products.update(productId, { name, category, description, cost, location });
+            // Update product
+            product.name = name;
+            product.category = category;
+            product.description = description;
+            product.providerId = providerId;
+            product.cost = cost;
+            product.pointsCost = pointsCost;
+            product.location = location;
             
+            await db.products.put(product);
+            
+            // Update primary variant if exists
             if (primaryVariant) {
-                const colorName = document.getElementById('eColor').value;
-                const newStock = parseInt(document.getElementById('eStock').value);
+                const color = document.getElementById('eColor').value;
+                const stock = parseInt(document.getElementById('eStock').value);
                 const minStock = parseInt(document.getElementById('eMinStock').value);
+                const maxStock = parseInt(document.getElementById('eMaxStock').value);
                 
-                const diff = newStock - primaryVariant.stock;
-                if (diff !== 0) {
+                const oldStock = primaryVariant.stock;
+                
+                primaryVariant.colorName = color;
+                primaryVariant.stock = stock;
+                primaryVariant.minStock = minStock;
+                primaryVariant.maxStock = maxStock;
+                
+                await db.variants.put(primaryVariant);
+                
+                // Record transaction if stock changed manually
+                if (stock !== oldStock) {
+                    const diff = stock - oldStock;
                     await db.transactions.add({
-                        date: new Date().toISOString(), 
-                        type: diff > 0 ? 'IN' : 'OUT', 
-                        variantId: primaryVariant.id, 
-                        userId: window.getCurrentUser(), 
-                        quantity: Math.abs(diff), 
-                        comments: 'Ajuste manual (Edición Producto)'
+                        date: new Date().toISOString(),
+                        type: 'AUDIT_ADJUST',
+                        variantId: primaryVariant.id,
+                        userId: window.getCurrentUserObj()?.name || 'Admin',
+                        quantity: diff,
+                        comments: 'Ajuste manual al editar producto'
                     });
                 }
-                await db.variants.put({ ...primaryVariant, colorName, minStock, stock: newStock });
             }
-
-            showToast('Producto actualizado');
+            
+            showToast('Cambios guardados correctamente');
             closeModal();
-            initCatalog(); // re-render table
+            await renderCatalogTable();
+            await renderVariantsTable();
         } catch (err) {
-            showToast('Error al actualizar', 'error');
+            showToast('Error al guardar', 'error');
         }
     });
 };

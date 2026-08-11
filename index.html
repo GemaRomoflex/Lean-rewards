@@ -31,7 +31,18 @@
     <script src="lib/xlsx.full.min.js?v=3"></script>
 </head>
 <body>
-    <div id="app" class="app-container">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h2><i data-lucide="package"></i> Lean Rewards</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Ingresa tu Número de Nómina para continuar</p>
+            <input type="text" id="loginEmployeeId" placeholder="Ej. 1231501" class="form-control" autocomplete="off" />
+            <button id="btnLogin" class="btn btn-primary" style="width: 100%; margin-top: 15px;">Ingresar</button>
+            <p id="loginError" style="color: var(--danger); margin-top: 10px; font-size: 0.85rem; display: none;"></p>
+        </div>
+    </div>
+
+    <div id="app" class="app-container hidden">
         
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
@@ -40,13 +51,11 @@
                 <h2>Lean Rewards</h2>
             </div>
             
-            <!-- User Role Switcher (Mock for Demo) -->
             <div class="role-selector">
-                <label>Rol actual:</label>
-                <select id="roleSelect">
-                    <option value="admin">Administrador</option>
-                    <option value="user">Usuario</option>
-                </select>
+                <label>Usuario actual:</label>
+                <div id="currentUserName" style="font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-top: 5px;"></div>
+                <div id="currentUserPoints" style="font-weight: bold; color: var(--primary); margin-top: 5px;"></div>
+                <input type="hidden" id="roleSelect" value="user" /> <!-- Hidden, we will update it via JS -->
             </div>
 
             <nav class="nav-menu">
@@ -67,6 +76,18 @@
                 </button>
                 <button class="nav-btn" data-target="qr-scan">
                     <i data-lucide="qr-code"></i> Escáner QR
+                </button>
+                <button class="nav-btn" data-target="rewards">
+                    <i data-lucide="gift"></i> Recompensas
+                </button>
+                <button class="nav-btn" data-target="points_admin" data-admin-only="true">
+                    <i data-lucide="coins"></i> Admon. Puntos
+                </button>
+                <button class="nav-btn" data-target="providers" data-admin-only="true">
+                    <i data-lucide="truck"></i> Proveedores
+                </button>
+                <button class="nav-btn" data-target="restock" data-admin-only="true">
+                    <i data-lucide="shopping-cart"></i> Órdenes de Compra
                 </button>
                 <button class="nav-btn" data-target="audit" data-admin-only="true">
                     <i data-lucide="clipboard-check"></i> Auditoría
@@ -120,7 +141,13 @@
                 <section id="catalog" class="view-section hidden">
                     <div class="view-header">
                         <h2>Catálogo de Productos</h2>
-                        <div style="display:flex; gap:10px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="catalogCategoryFilter" class="input-modern" style="padding:5px 10px; min-width:150px;">
+                                <option value="ALL">Todas las categorías</option>
+                                <option value="Premios Lean">Premios Lean</option>
+                                <option value="Papelería">Papelería</option>
+                                <option value="Tecnología">Tecnología</option>
+                            </select>
                             <button id="btnImportExcel" class="btn btn-secondary">
                                 <i data-lucide="file-spreadsheet"></i> Importar Excel
                             </button>
@@ -166,6 +193,114 @@
                                 </tr>
                             </thead>
                             <tbody id="variantsTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- History View -->
+                <section id="history" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Historial de Entradas y Salidas</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Producto</th>
+                                    <th>Color/Variante</th>
+                                    <th>Usuario</th>
+                                    <th>Cantidad</th>
+                                    <th>Comentarios</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Rewards View -->
+                <section id="rewards" class="view-section hidden">
+                    <div class="view-header">
+                        <h2>Catálogo de Premios</h2>
+                    </div>
+                    <div id="rewardsGrid" class="cards-grid"></div>
+                </section>
+
+                <!-- Points Admin View -->
+                <section id="points_admin" class="view-section hidden" data-admin-only="true">
+                    <div class="view-header">
+                        <h2>Administración de Puntos</h2>
+                        <div style="display:flex; gap:10px;">
+                            <button id="btnImportUsers" class="btn btn-secondary">
+                                <i data-lucide="file-spreadsheet"></i> Importar Excel
+                            </button>
+                            <input type="file" id="fileExcelUsers" accept=".xlsx, .xls" style="display:none;">
+                            <button id="btnAddUser" class="btn btn-primary">
+                                <i data-lucide="user-plus"></i> Agregar Empleado
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Empleado ID</th>
+                                    <th>Nombre</th>
+                                    <th>Puntos Actuales</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pointsAdminTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Providers View -->
+                <section id="providers" class="view-section hidden" data-admin-only="true">
+                    <div class="view-header">
+                        <h2>Gestión de Proveedores</h2>
+                        <button class="btn btn-primary" onclick="window.openProviderModal()">+ Nuevo Proveedor</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Contacto</th>
+                                    <th>Teléfono / Email</th>
+                                    <th>Lead Time (Días)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="providersTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Restock View -->
+                <section id="restock" class="view-section hidden" data-admin-only="true">
+                    <div class="view-header">
+                        <h2>Planeación de Reabastecimiento</h2>
+                        <button class="btn btn-success" id="btnExportRestock">
+                            <i data-lucide="file-spreadsheet"></i> Exportar Órdenes (Excel)
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Producto</th>
+                                    <th>Stock Actual</th>
+                                    <th>Mínimo / Máximo</th>
+                                    <th>Sugerencia Compra</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restockTableBody"></tbody>
                         </table>
                     </div>
                 </section>
@@ -322,6 +457,10 @@
     <script src="js/modules/qr.js?v=3"></script>
     <script src="js/modules/audit.js?v=3"></script>
     <script src="js/modules/history.js?v=3"></script>
+    <script src="js/modules/rewards.js?v=3"></script>
+    <script src="js/modules/points_admin.js?v=3"></script>
+    <script src="js/modules/providers.js?v=3"></script>
+    <script src="js/modules/restock.js?v=3"></script>
     <script src="js/app.js?v=3"></script>
 </body>
 </html>

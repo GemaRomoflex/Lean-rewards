@@ -14,11 +14,13 @@ async function renderGallery(searchTerm) {
     
     const term = searchTerm.toLowerCase();
     
-    const filtered = fullVariants.filter(v => 
-        v.product.name.toLowerCase().includes(term) || 
-        v.colorName.toLowerCase().includes(term) ||
-        v.product.category.toLowerCase().includes(term)
-    );
+    const filtered = fullVariants.filter(v => {
+        if (v.product.category === 'Papelería') return false;
+        
+        return v.product.name.toLowerCase().includes(term) || 
+               v.colorName.toLowerCase().includes(term) ||
+               (v.product.category && v.product.category.toLowerCase().includes(term));
+    });
     
     if (filtered.length === 0) {
         grid.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1;">No se encontraron resultados.</p>';

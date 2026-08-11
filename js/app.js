@@ -19,18 +19,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Database
     await initDB();
 
-    // Role Management
+    // Login Logic
+    const loginScreen = document.getElementById('loginScreen');
+    const appContainer = document.getElementById('app');
+    const btnLogin = document.getElementById('btnLogin');
+    const loginEmployeeId = document.getElementById('loginEmployeeId');
+    const loginError = document.getElementById('loginError');
     const roleSelect = document.getElementById('roleSelect');
-    roleSelect.addEventListener('change', (e) => {
-        document.body.setAttribute('data-role', e.target.value);
-        // Default redirect if viewing an admin page as user
-        const activeNav = document.querySelector('.nav-btn.active');
-        if (e.target.value === 'user' && activeNav && activeNav.getAttribute('data-admin-only') === 'true') {
-            document.querySelector('.nav-btn[data-target="gallery"]').click();
+
+    let currentUser = null;
+
+    btnLogin.addEventListener('click', async () => {
+        const empId = loginEmployeeId.value.trim();
+        if (!empId) {
+            loginError.textContent = 'Ingresa un número de nómina válido';
+            loginError.style.display = 'block';
+            return;
+        }
+
+        try {
+            // Check if user exists in DB
+            let user = null;
+            if (window.db && window.db.users) {
+                user = await window.db.users.get(empId);
+            }
+
+            // For now, if no users table implemented yet, or user not found, auto-create a mock
+            if (!user) {
+                // Determine Role
+                const role = (empId === '1231501') ? 'admin' : 'user';
+                user = { employee_id: empId, name: 'Empleado ' + empId, points: 0, role: role };
+            } else {
+                user.role = (user.employee_id === '1231501') ? 'admin' : 'user';
+            }
+
+            currentUser = user;
+            roleSelect.value = user.role;
+            document.body.setAttribute('data-role', user.role);
+
+            // Update UI
+            document.getElementById('currentUserName').textContent = user.name;
+            document.getElementById('currentUserPoints').textContent = user.points + ' Pts';
+
+            // Hide Login, Show App
+            loginScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+
+            // Default Route based on role
+            if (user.role === 'admin') {
+                document.querySelector('.nav-btn[data-target="dashboard"]').click();
+            } else {
+                // Wait for rewards module or fallback to gallery
+                const rewardsBtn = document.querySelector('.nav-btn[data-target="rewards"]');
+                if (rewardsBtn) rewardsBtn.click();
+                else document.querySelector('.nav-btn[data-target="gallery"]').click();
+            }
+        } catch (error) {
+            loginError.textContent = 'Error al conectar con la base de datos';
+            loginError.style.display = 'block';
         }
     });
-    // Set initial role
-    document.body.setAttribute('data-role', roleSelect.value);
+
+    loginEmployeeId.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') btnLogin.click();
+    });
+
+    window.getCurrentUserObj = () => currentUser;
 
     // Mobile Sidebar Toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -65,14 +119,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const currentViewTitle = document.getElementById('currentViewTitle');
 
     const modulesInit = {
-        'dashboard': initDashboard,
-        'gallery': initGallery,
-        'catalog': initCatalog,
-        'entries': () => initInventory('entries'),
-        'exits': () => initInventory('exits'),
-        'qr-scan': initQR,
-        'audit': initAudit,
-        'history': initHistory
+        'dashboard': () => { if(window.initDashboard) initDashboard(); },
+        'gallery': () => { if(window.initGallery) initGallery(); },
+        'catalog': () => { if(window.initCatalog) initCatalog(); },
+        'entries': () => { if(window.initInventory) initInventory('entries'); },
+        'exits': () => { if(window.initInventory) initInventory('exits'); },
+        'qr-scan': () => { if(window.initQR) initQR(); },
+        'audit': () => { if(window.initAudit) initAudit(); },
+        'history': () => { if(window.initHistory) initHistory(); },
+        'rewards': () => { if(window.initRewards) initRewards(); },
+        'points_admin': () => { if(window.initPointsAdmin) initPointsAdmin(); },
+        'providers': () => { if(window.initProviders) initProviders(); },
+        'restock': () => { if(window.initRestock) initRestock(); }
     };
 
     function switchView(targetId, title) {

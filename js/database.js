@@ -89,6 +89,10 @@ const db = {
             const snakeObj = toSnake(updates);
             const { error } = await supabaseClient.from('products').update(snakeObj).eq('id', id);
             if (error) throw error;
+        },
+        async put(p) {
+            if (p.id) return this.update(p.id, p);
+            else return this.add(p);
         }
     },
     variants: {
@@ -164,30 +168,67 @@ const db = {
     },
     audits: {
         async clear() {},
-        async add(a) {
+        async add(record) {
             if (!supabaseClient) throw new Error("Supabase no inicializado");
-            const { data, error } = await supabaseClient.from('audits').insert([toSnake(a)]).select('id').single();
-            if (error) throw error;
+            const { data, error } = await supabaseClient.from('audits').insert([toSnake(record)]).select('id').single();
+            if (error) { console.error(error); return null; }
             return data.id;
         },
-        orderBy(field) {
-            const snakeField = field === 'userId' ? 'user_id' : field;
-            return {
-                reverse() {
-                    return {
-                        async toArray() {
-                            if (!supabaseClient) return [];
-                            try {
-                                const { data, error } = await supabaseClient.from('audits').select('*').order(snakeField, { ascending: false });
-                                if (error) throw error;
-                                return data.map(toCamel);
-                            } catch(err) {
-                                return [];
-                            }
-                        }
-                    }
-                }
+        async toArray() {
+            if (!supabaseClient) return [];
+            const { data, error } = await supabaseClient.from('audits').select('*').order('date', { ascending: false });
+            if (error) { console.error(error); return []; }
+            return data.map(toCamel);
+        }
+    },
+    users: {
+        async get(id) {
+            const { data } = await supabaseClient.from('users').select('*').eq('employee_id', id).single();
+            return data ? toCamel(data) : null;
+        },
+        async put(record) {
+            // Upsert
+            const { error } = await supabaseClient.from('users').upsert(toSnake(record));
+            if (error) { console.error(error); return false; }
+            return true;
+        },
+        async toArray() {
+            const { data } = await supabaseClient.from('users').select('*').order('name');
+            return data ? data.map(toCamel) : [];
+        }
+    },
+    providers: {
+        async get(id) {
+            const { data } = await supabaseClient.from('providers').select('*').eq('id', id).single();
+            return data ? toCamel(data) : null;
+        },
+        async put(record) {
+            if (record.id) {
+                const { error } = await supabaseClient.from('providers').update(toSnake(record)).eq('id', record.id);
+                if (error) return false;
+            } else {
+                const { error } = await supabaseClient.from('providers').insert(toSnake(record));
+                if (error) return false;
             }
+            return true;
+        },
+        async toArray() {
+            const { data } = await supabaseClient.from('providers').select('*').order('name');
+            return data ? data.map(toCamel) : [];
+        },
+        async delete(id) {
+            const { error } = await supabaseClient.from('providers').delete().eq('id', id);
+            return !error;
+        }
+    },
+    point_transactions: {
+        async add(record) {
+            const { error } = await supabaseClient.from('point_transactions').insert(toSnake(record));
+            return !error;
+        },
+        async toArray() {
+            const { data } = await supabaseClient.from('point_transactions').select('*').order('created_at', { ascending: false });
+            return data ? data.map(toCamel) : [];
         }
     },
     async transaction(mode, t1, t2, fn) {

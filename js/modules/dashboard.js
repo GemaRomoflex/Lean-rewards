@@ -17,7 +17,7 @@ async function updateAlertsHeader() {
     
     fullVariants.forEach(v => {
         if (v.stock <= 0) outOfStock++;
-        else if (v.stock <= v.minStock) lowStock++;
+        else if (v.stock <= (v.minStock || 0)) lowStock++;
     });
     
     if (outOfStock > 0) {
@@ -62,14 +62,19 @@ async function renderDashboard() {
             <i class="kpi-icon" data-lucide="alert-octagon" style="width:40px;height:40px;color:var(--danger);"></i>
         </div>
         <div class="kpi-card">
-            <span class="kpi-title">Precisión Auditoría</span>
-            <span class="kpi-value" id="kpiAccuracy">-</span>
-            <i class="kpi-icon" data-lucide="check-circle" style="width:40px;height:40px;"></i>
+            <span class="kpi-title">Puntos Otorgados</span>
+            <span class="kpi-value" id="kpiPointsGiven">0</span>
+            <i class="kpi-icon" data-lucide="gift" style="width:40px;height:40px;color:var(--success);"></i>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-title">Puntos Canjeados</span>
+            <span class="kpi-value" id="kpiPointsRedeemed">0</span>
+            <i class="kpi-icon" data-lucide="shopping-bag" style="width:40px;height:40px;color:var(--primary);"></i>
         </div>
         
         <div class="charts-container" style="grid-column: 1 / -1;">
             <div class="card">
-                <h3 style="margin-bottom:15px; font-size:1rem; color:var(--text-secondary);">Salidas de Premios (Últimos 30 días)</h3>
+                <h3 style="margin-bottom:15px; font-size:1rem; color:var(--text-secondary);">Salidas de Inventario (Últimos 30 días)</h3>
                 <canvas id="chartExits"></canvas>
             </div>
             <div class="card">
@@ -83,118 +88,92 @@ async function renderDashboard() {
     // Fetch Data
     const fullVariants = await getFullVariants();
     const transactions = await db.transactions.toArray();
-    const audits = await db.audits.orderBy('date').reverse().toArray();
+    const pointTxs = await db.point_transactions.toArray();
     
     // Calculate KPIs
     let totalValue = 0;
     let criticalCount = 0;
     fullVariants.forEach(v => {
         totalValue += v.stock * (v.product.cost || 0);
-        if (v.stock <= 0) criticalCount++;
+        if (v.stock <= 0 || v.stock <= (v.minStock || 0)) criticalCount++;
+    });
+    
+    let ptsGiven = 0;
+    let ptsRedeemed = 0;
+    pointTxs.forEach(tx => {
+        if (tx.type === 'ADD') ptsGiven += tx.amount;
+        else if (tx.type === 'REDEEM') ptsRedeemed += tx.amount;
     });
     
     document.getElementById('kpiTotalProducts').textContent = fullVariants.length;
     document.getElementById('kpiTotalValue').textContent = '$' + totalValue.toLocaleString();
     document.getElementById('kpiCritical').textContent = criticalCount;
-    
-    if (audits.length > 0) {
-        document.getElementById('kpiAccuracy').textContent = audits[0].accuracy + '%';
-        if (audits[0].accuracy >= 95) document.getElementById('kpiAccuracy').style.color = 'var(--success)';
-        else document.getElementById('kpiAccuracy').style.color = 'var(--danger)';
-    } else {
-        document.getElementById('kpiAccuracy').textContent = 'N/A';
-    }
-    
-    // Setup Charts
-    setupExitsChart(transactions);
-    setupTopProductsChart(transactions, fullVariants);
-}
+    document.getElementById('kpiPointsGiven').textContent = ptsGiven;
+    document.getElementById('kpiPointsRedeemed').textContent = ptsRedeemed;
 
-function setupExitsChart(transactions) {
-    const ctx = document.getElementById('chartExits').getContext('2d');
+    // Charts
+    const exitsData = {};
+    const topProducts = {};
     
-    // Group OUT transactions by date
-    const exits = transactions.filter(t => t.type === 'OUT');
-    const grouped = {};
-    exits.forEach(t => {
-        const dateStr = new Date(t.date).toLocaleDateString();
-        if (!grouped[dateStr]) grouped[dateStr] = 0;
-        grouped[dateStr] += t.quantity;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    transactions.forEach(t => {
+        if (t.type === 'OUT') {
+            const dateStr = new Date(t.date).toLocaleDateString();
+            const txDate = new Date(t.date);
+            if (txDate >= thirtyDaysAgo) {
+                exitsData[dateStr] = (exitsData[dateStr] || 0) + t.quantity;
+            }
+            
+            // Top Products
+            const v = fullVariants.find(x => x.id === t.variantId);
+            if (v) {
+                const pName = v.product.name;
+                topProducts[pName] = (topProducts[pName] || 0) + t.quantity;
+            }
+        }
     });
-    
-    // Get last 7 days keys
-    const labels = Object.keys(grouped).slice(-7);
-    const data = labels.map(l => grouped[l]);
-    
-    const chart = new Chart(ctx, {
+
+    const dates = Object.keys(exitsData).sort((a,b) => new Date(a) - new Date(b));
+    const exitsCount = dates.map(d => exitsData[d]);
+
+    const ctxExits = document.getElementById('chartExits').getContext('2d');
+    chartsInstance.push(new Chart(ctxExits, {
         type: 'line',
         data: {
-            labels: labels.length ? labels : ['Sin datos'],
+            labels: dates,
             datasets: [{
-                label: 'Unidades Entregadas',
-                data: data.length ? data : [0],
+                label: 'Salidas (Cantidad)',
+                data: exitsCount,
                 borderColor: '#005A9C',
                 backgroundColor: 'rgba(0, 90, 156, 0.1)',
-                tension: 0.3,
-                fill: true
+                fill: true,
+                tension: 0.4
             }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
         }
-    });
-    chartsInstance.push(chart);
-}
+    }));
 
-function setupTopProductsChart(transactions, fullVariants) {
-    const ctx = document.getElementById('chartTop').getContext('2d');
-    
-    // Count total exits per variant
-    const exits = transactions.filter(t => t.type === 'OUT');
-    const counts = {};
-    exits.forEach(t => {
-        if (!counts[t.variantId]) counts[t.variantId] = 0;
-        counts[t.variantId] += t.quantity;
-    });
-    
-    // Sort and get top 5
-    const sorted = Object.keys(counts).map(vid => ({
-        vid: parseInt(vid),
-        qty: counts[vid]
-    })).sort((a,b) => b.qty - a.qty).slice(0, 5);
-    
-    const labels = [];
-    const data = [];
-    
-    sorted.forEach(item => {
-        const v = fullVariants.find(fv => fv.id === item.vid);
-        if (v) {
-            labels.push(`${v.product.name} (${v.colorName})`);
-            data.push(item.qty);
-        }
-    });
-    
-    const chart = new Chart(ctx, {
+    const sortedTop = Object.entries(topProducts).sort((a,b) => b[1] - a[1]).slice(0,5);
+    const topLabels = sortedTop.map(x => x[0]);
+    const topValues = sortedTop.map(x => x[1]);
+
+    const ctxTop = document.getElementById('chartTop').getContext('2d');
+    chartsInstance.push(new Chart(ctxTop, {
         type: 'bar',
         data: {
-            labels: labels.length ? labels : ['Sin datos'],
+            labels: topLabels,
             datasets: [{
-                label: 'Unidades',
-                data: data.length ? data : [0],
-                backgroundColor: '#28a745',
+                label: 'Cantidad Saliente',
+                data: topValues,
+                backgroundColor: '#FF6B6B',
                 borderRadius: 4
             }]
         },
         options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            indexAxis: 'y'
         }
-    });
-    chartsInstance.push(chart);
+    }));
 }
-
 window.initDashboard = initDashboard;
 window.updateAlertsHeader = updateAlertsHeader;
