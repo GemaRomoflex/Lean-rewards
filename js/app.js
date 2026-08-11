@@ -38,13 +38,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sidebarOverlay = document.getElementById('sidebarOverlay');
 
     function toggleSidebar() {
-        sidebar.classList.toggle('open');
-        sidebarOverlay.classList.toggle('open');
+        if (window.innerWidth <= 768) {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('open');
+        } else {
+            sidebar.classList.toggle('collapsed');
+        }
     }
 
     function closeSidebar() {
-        sidebar.classList.remove('open');
-        sidebarOverlay.classList.remove('open');
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('open');
+        }
+        // No auto-close en desktop
     }
 
     if (mobileMenuBtn && sidebarOverlay) {

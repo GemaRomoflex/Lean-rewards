@@ -208,9 +208,15 @@ body[data-role="user"] [data-admin-only="true"] {
     display: none !important;
 }
 
-/* Responsive Layout (Mobile) */
+/* Responsive Layout & Sidebar Toggle */
 .mobile-menu-btn {
-    display: none;
+    display: flex;
+}
+.sidebar {
+    transition: margin-left 0.3s ease;
+}
+.sidebar.collapsed {
+    margin-left: -250px;
 }
 .sidebar-overlay {
     display: none;
@@ -226,10 +232,6 @@ body[data-role="user"] [data-admin-only="true"] {
 }
 
 @media (max-width: 768px) {
-    .mobile-menu-btn {
-        display: flex;
-    }
-    
     .sidebar {
         position: fixed;
         top: 0;
