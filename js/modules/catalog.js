@@ -466,6 +466,7 @@ window.addVariant = async (productId) => {
 
 window.printQR = (sku, label) => {
     const printArea = document.getElementById('printArea');
+    printArea.classList.remove('hidden');
     printArea.innerHTML = `
         <div class="qr-print-card">
             <h4>${label}</h4>
@@ -479,6 +480,7 @@ window.printQR = (sku, label) => {
         window.print();
         window.addEventListener('afterprint', function onAfterPrint() {
             printArea.innerHTML = '';
+            printArea.classList.add('hidden');
             window.removeEventListener('afterprint', onAfterPrint);
         });
     }, 500);
@@ -492,6 +494,7 @@ async function printAllQRs() {
     }
     
     const printArea = document.getElementById('printArea');
+    printArea.classList.remove('hidden');
     printArea.innerHTML = '';
     
     fullVariants.forEach((v, idx) => {
@@ -513,6 +516,7 @@ async function printAllQRs() {
         // Listen for the print dialog to close, then clear the area
         window.addEventListener('afterprint', function onAfterPrint() {
             printArea.innerHTML = '';
+            printArea.classList.add('hidden');
             window.removeEventListener('afterprint', onAfterPrint);
         });
     }, 1500);

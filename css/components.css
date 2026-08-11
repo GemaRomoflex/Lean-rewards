@@ -361,7 +361,7 @@
 @media print {
     body * { visibility: hidden; }
     #printArea, #printArea * { visibility: visible; }
-    #printArea { position: absolute; left: 0; top: 0; width: 100%; display: flex; flex-wrap: wrap; gap: 20px; padding: 20px;}
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; display: flex !important; flex-wrap: wrap; gap: 20px; padding: 20px;}
     .qr-print-card {
         border: 1px dashed #ccc;
         padding: 15px;
