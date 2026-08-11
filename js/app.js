@@ -29,8 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentUser = null;
 
-    btnLogin.addEventListener('click', async () => {
-        const empId = loginEmployeeId.value.trim();
+    async function performLogin(empId) {
         if (!empId) {
             loginError.textContent = 'Ingresa un número de nómina válido';
             loginError.style.display = 'block';
@@ -58,6 +57,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             roleSelect.value = user.role;
             document.body.setAttribute('data-role', user.role);
 
+            // Save to localStorage
+            localStorage.setItem('loggedInUser', empId);
+
             // Update UI
             document.getElementById('currentUserName').textContent = user.name;
             document.getElementById('currentUserPoints').textContent = user.points + ' Pts';
@@ -79,11 +81,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             loginError.textContent = 'Error al conectar con la base de datos';
             loginError.style.display = 'block';
         }
+    }
+
+    btnLogin.addEventListener('click', () => {
+        performLogin(loginEmployeeId.value.trim());
     });
+
+    // Auto-login on load
+    const savedUser = localStorage.getItem('loggedInUser');
+    if (savedUser) {
+        performLogin(savedUser);
+    }
 
     loginEmployeeId.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') btnLogin.click();
     });
+
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('loggedInUser');
+            currentUser = null;
+            appContainer.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            loginEmployeeId.value = '';
+        });
+    }
 
     window.getCurrentUserObj = () => currentUser;
 
