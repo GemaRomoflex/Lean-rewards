@@ -3,6 +3,18 @@
 
 
 async function initCatalog() {
+    // Auto-migrate all existing products to 'Premios Lean'
+    const allProds = await db.products.toArray();
+    let migrated = 0;
+    for (let p of allProds) {
+        if (p.category !== 'Premios Lean') {
+            p.category = 'Premios Lean';
+            await db.products.put(p);
+            migrated++;
+        }
+    }
+    if (migrated > 0) showToast(`${migrated} productos actualizados a Premios Lean.`);
+
     await renderCatalogTable();
     await renderVariantsTable();
 
