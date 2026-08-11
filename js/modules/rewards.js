@@ -47,22 +47,26 @@ async function loadRewardsCatalog() {
         
         const div = document.createElement('div');
         div.className = 'gallery-card';
+        div.style.cursor = canAfford ? 'pointer' : 'not-allowed';
+        if (canAfford) {
+            div.onclick = () => window.redeemReward(v.id, cost);
+        }
+        
         div.innerHTML = `
-            <img src="${v.photo || 'https://via.placeholder.com/300?text=Premio'}" alt="Premio" />
+            ${v.photo ? `<img src="${v.photo}" alt="${p.name}">` : `<div style="height:180px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;"><i data-lucide="image" style="width:48px;height:48px;"></i></div>`}
             <div class="gallery-card-content">
                 <div class="gallery-card-title">${p.name}</div>
                 <div class="gallery-card-variant">${v.colorName}</div>
-                <div style="display:flex; justify-content:space-between; margin-top:10px; align-items:center;">
-                    <span style="color:var(--primary); font-weight:bold;">
+                <div class="gallery-card-stock" style="margin-bottom: 10px;">
+                    <span class="stock-indicator stock-good"></span>
+                    <span>${v.stock} unidades</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px;">
+                    <span style="color:var(--primary); font-weight:bold; font-size:1.1rem;">
                         <i data-lucide="coins" style="width:16px;"></i> ${cost} Pts
                     </span>
-                    <span style="font-size:0.8rem; color:var(--text-secondary);">Stock: ${v.stock}</span>
+                    ${!canAfford ? `<span class="badge badge-danger">Puntos Insuficientes</span>` : `<span class="badge badge-success">Canjear</span>`}
                 </div>
-                <button class="btn btn-primary" style="width:100%; margin-top:15px;" 
-                    ${canAfford ? '' : 'disabled'}
-                    onclick="window.redeemReward(${v.id}, ${cost})">
-                    ${canAfford ? 'Canjear Premio' : 'Puntos Insuficientes'}
-                </button>
             </div>
         `;
         grid.appendChild(div);
