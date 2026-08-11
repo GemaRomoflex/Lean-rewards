@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,7 @@
     <title>Lean Rewards Inventory</title>
     <script>
         window.onerror = function(msg, url, line, col, error) {
-            alert("Error en linea " + line + ": " + msg + "\n(Por favor compÃƒÂ¡rteme este mensaje de error)");
+            alert("Error en linea " + line + ": " + msg + "\n(Por favor compárteme este mensaje de error)");
         };
         window.addEventListener('unhandledrejection', function(event) {
             alert("Promesa rechazada: " + (event.reason && event.reason.message ? event.reason.message : event.reason));
@@ -54,10 +54,10 @@
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </button>
                 <button class="nav-btn" data-target="gallery">
-                    <i data-lucide="image"></i> GalerÃƒÂ­a Visual
+                    <i data-lucide="image"></i> Galería Visual
                 </button>
                 <button class="nav-btn" data-target="catalog" data-admin-only="true">
-                    <i data-lucide="database"></i> CatÃƒÂ¡logo
+                    <i data-lucide="database"></i> Catálogo
                 </button>
                 <button class="nav-btn" data-target="entries" data-admin-only="true">
                     <i data-lucide="arrow-down-to-line"></i> Entradas
@@ -66,10 +66,10 @@
                     <i data-lucide="arrow-up-right"></i> Salidas (Premios)
                 </button>
                 <button class="nav-btn" data-target="qr-scan">
-                    <i data-lucide="qr-code"></i> EscÃƒÂ¡ner QR
+                    <i data-lucide="qr-code"></i> Escáner QR
                 </button>
                 <button class="nav-btn" data-target="audit" data-admin-only="true">
-                    <i data-lucide="clipboard-check"></i> AuditorÃƒÂ­a
+                    <i data-lucide="clipboard-check"></i> Auditoría
                 </button>
                 <button class="nav-btn" data-target="history">
                     <i data-lucide="history"></i> Historial
@@ -113,7 +113,7 @@
                 <!-- View: Catalog -->
                 <section id="catalog" class="view-section hidden">
                     <div class="view-header">
-                        <h2>CatÃƒÂ¡logo de Productos</h2>
+                        <h2>Catálogo de Productos</h2>
                         <div style="display:flex; gap:10px;">
                             <button id="btnImportExcel" class="btn btn-secondary">
                                 <i data-lucide="file-spreadsheet"></i> Importar Excel
@@ -131,7 +131,7 @@
                                 <tr>
                                     <th>Foto</th>
                                     <th>Producto</th>
-                                    <th>CategorÃƒÂ­a</th>
+                                    <th>Categoría</th>
                                     <th>Costo U.</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -141,7 +141,7 @@
                     </div>
                     
                     <div class="view-header" style="margin-top: 30px;">
-                        <h2>Variantes y CÃƒÂ³digos QR</h2>
+                        <h2>Variantes y Códigos QR</h2>
                         <button id="btnPrintAllQRs" class="btn btn-secondary">
                             <i data-lucide="printer"></i> Imprimir Todos los QRs
                         </button>
@@ -153,7 +153,7 @@
                                     <th>Producto</th>
                                     <th>Color/Variante</th>
                                     <th>Stock</th>
-                                    <th>MÃƒÂ­nimo</th>
+                                    <th>Mínimo</th>
                                     <th>Estatus</th>
                                     <th>QR</th>
                                     <th>Acciones</th>
@@ -167,7 +167,7 @@
                 <!-- View: Entries (Entradas) -->
                 <section id="entries" class="view-section hidden">
                     <div class="view-header">
-                        <h2>Registrar Entradas (Compras/ReposiciÃƒÂ³n)</h2>
+                        <h2>Registrar Entradas (Compras/Reposición)</h2>
                     </div>
                     <div class="card-form">
                         <form id="entryForm">
@@ -193,13 +193,13 @@
                     <div class="view-header">
                         <h2>Registrar Salida (Entregar Premio)</h2>
                         <button id="btnExitByQR" class="btn btn-secondary">
-                            <i data-lucide="qr-code"></i> Usar EscÃƒÂ¡ner QR
+                            <i data-lucide="qr-code"></i> Usar Escáner QR
                         </button>
                     </div>
                     <div class="card-form">
                         <form id="exitForm">
                             <div class="form-group">
-                                <label>SelecciÃƒÂ³n Manual</label>
+                                <label>Selección Manual</label>
                                 <select id="exitVariantSelect" required class="input-modern"></select>
                             </div>
                             <div class="form-group">
@@ -218,10 +218,10 @@
                 <!-- View: QR Scan -->
                 <section id="qr-scan" class="view-section hidden">
                     <div class="view-header">
-                        <h2>EscÃƒÂ¡ner QR (TransacciÃƒÂ³n RÃƒÂ¡pida)</h2>
+                        <h2>Escáner QR (Transacción Rápida)</h2>
                     </div>
                     <div class="qr-scanner-container">
-                        <p style="text-align:center; margin-bottom: 20px;">Escanea el cÃƒÂ³digo QR de un SKU para realizar un retiro rÃƒÂ¡pido.</p>
+                        <p style="text-align:center; margin-bottom: 20px;">Escanea el código QR de un SKU para realizar un retiro rápido.</p>
                         <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);"></div>
                         <div id="qr-result" class="qr-result-card hidden">
                             <!-- Injected after successful scan -->
@@ -232,17 +232,17 @@
                 <!-- View: Audit -->
                 <section id="audit" class="view-section hidden">
                     <div class="view-header">
-                        <h2>AuditorÃƒÂ­a de Inventario FÃƒÂ­sico</h2>
-                        <button id="btnStartAudit" class="btn btn-primary">Iniciar Nueva AuditorÃƒÂ­a</button>
+                        <h2>Auditoría de Inventario Físico</h2>
+                        <button id="btnStartAudit" class="btn btn-primary">Iniciar Nueva Auditoría</button>
                     </div>
                     <div id="auditActiveArea" class="hidden">
                         <div class="audit-scanner card">
-                            <p><strong>1. Escanea los cÃƒÂ³digos QR</strong></p>
+                            <p><strong>1. Escanea los códigos QR</strong></p>
                             <div id="audit-qr-reader" style="width: 100%; max-width: 400px; margin: 10px auto; border-radius: 8px; overflow: hidden;"></div>
                             
                             <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
                             
-                            <p><strong>2. O SelecciÃƒÂ³n Manual</strong></p>
+                            <p><strong>2. O Selección Manual</strong></p>
                             <div class="audit-manual-entry" style="display:flex; gap:10px; align-items:center;">
                                 <select id="auditVariantSelect" class="input-modern" style="flex:1;"></select>
                                 <input type="number" id="auditManualQty" class="input-modern" style="width: 80px;" value="1" min="1">
@@ -250,7 +250,7 @@
                             </div>
                         </div>
                         <div class="table-container mt-20 card">
-                            <h3>Conteo FÃƒÂ­sico Actual</h3>
+                            <h3>Conteo Físico Actual</h3>
                             <table class="modern-table">
                                 <thead>
                                     <tr>

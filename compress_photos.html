@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Compresor de Fotos</title>
+    <script src="lib/supabase.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f4f7f6; }
+        .box { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; font-size: 16px; background: #005A9C; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #004b80; }
+        #log { margin-top: 20px; font-family: monospace; white-space: pre-wrap; background: #eee; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Optimizador de Base de Datos</h2>
+        <p>Las fotos subidas originalmente son muy pesadas, lo que causa lentitud o errores de "No se encontraron resultados". Haz click en el botón de abajo para comprimir todas las fotos en la base de datos automáticamente.</p>
+        <button id="btnStart">Iniciar Compresión</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(msg) {
+            const div = document.getElementById('log');
+            if(div) {
+                div.innerHTML += msg + '\n';
+                div.scrollTop = div.scrollHeight;
+            }
+        }
+
+        window.onerror = function(msg, url, line) {
+            log('Error de sistema: ' + msg + ' (Línea ' + line + ')');
+            return false;
+        };
+
+        const SUPABASE_URL = 'https://eoazxjqemimzsefldfms.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvYXp4anFlbWltenNlZmxkZm1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNjY4ODcsImV4cCI6MjEwMTY0Mjg4N30.gxQsH8F9-zK_01xOt8CMquSPp59rZeaFOjuvhONGA2c';
+        
+        let supabase;
+        try {
+            if (!window.supabase) {
+                log('ADVERTENCIA: La librería de Supabase no cargó. ¿Tienes internet o algún bloqueador?');
+            } else {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+                });
+                log('Sistema inicializado. Listo para comprimir.');
+            }
+        } catch (e) {
+            log('Error al inicializar Supabase: ' + e.message);
+        }
+
+        async function compressImageBase64(base64Str) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; // Even smaller for catalog view
+                    const MAX_HEIGHT = 400;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width <= MAX_WIDTH && height <= MAX_HEIGHT) {
+                        resolve(base64Str); // Already small
+                        return;
+                    }
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = base64Str;
+            });
+        }
+
+        document.getElementById('btnStart').addEventListener('click', async () => {
+            const btn = document.getElementById('btnStart');
+            btn.disabled = true;
+            btn.innerText = 'Procesando...';
+            log('Obteniendo IDs de variantes...');
+            
+            try {
+                // Fetch only IDs first
+                const { data: variants, error } = await supabase.from('variants').select('id');
+                if (error) throw error;
+                
+                log(`Se encontraron ${variants.length} variantes. Iniciando compresión uno a uno...`);
+                
+                for (let i = 0; i < variants.length; i++) {
+                    const vId = variants[i].id;
+                    log(`[${i+1}/${variants.length}] Descargando variante ID: ${vId}...`);
+                    
+                    const { data: vData, error: fetchErr } = await supabase.from('variants').select('*').eq('id', vId).single();
+                    if (fetchErr) {
+                        log(`Error descargando variante ${vId}: ` + fetchErr.message);
+                        continue;
+                    }
+                    
+                    if (!vData.photo || !vData.photo.startsWith('data:image')) {
+                        log(`Variante ${vId} no tiene foto o no es base64. Omitiendo.`);
+                        continue;
+                    }
+                    
+                    const originalLength = vData.photo.length;
+                    if (originalLength < 100000) { // Less than ~100kb
+                        log(`Variante ${vId} ya está optimizada (${Math.round(originalLength/1024)}kb). Omitiendo.`);
+                        continue;
+                    }
+                    
+                    log(`Comprimiendo variante ${vId} (Tamaño original: ${Math.round(originalLength/1024/1024 * 100)/100} MB)...`);
+                    const compressedBase64 = await compressImageBase64(vData.photo);
+                    const newLength = compressedBase64.length;
+                    log(`Nuevo tamaño: ${Math.round(newLength/1024)} kb. Guardando...`);
+                    
+                    if (newLength < originalLength) {
+                        const { error: updateErr } = await supabase.from('variants').update({ photo: compressedBase64 }).eq('id', vId);
+                        if (updateErr) {
+                            log(`Error actualizando ${vId}: ` + updateErr.message);
+                        } else {
+                            log(`¡Guardado exitoso!`);
+                        }
+                    } else {
+                        log(`La imagen no se pudo reducir más. Omitiendo.`);
+                    }
+                }
+                
+                log('\n¡PROCESO COMPLETADO! Ya puedes cerrar esta ventana y recargar tu aplicación principal.');
+                btn.innerText = '¡Completado!';
+            } catch (err) {
+                log('Error fatal: ' + err.message);
+                btn.disabled = false;
+                btn.innerText = 'Reintentar';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -176,24 +176,35 @@ async function initCatalog() {
 
 async function renderCatalogTable() {
     const products = await db.products.toArray();
+    const fullVariants = await getFullVariants();
     const tbody = document.getElementById('catalogTableBody');
     tbody.innerHTML = '';
     
-    for (const p of products) {
-        const tr = document.createElement('tr');
-        // Usar un placeholder si no hay variante con foto
-        tr.innerHTML = `
-            <td><i data-lucide="package" style="color:var(--text-secondary)"></i></td>
-            <td><strong>${p.name}</strong><br><small>${p.description}</small></td>
-            <td>${p.category}</td>
-            <td>$${p.cost}</td>
-            <td>
-                <button class="btn btn-secondary btn-sm" onclick="window.addVariant(${p.id})">
-                    <i data-lucide="plus"></i> Variante
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">No hay productos registrados.</td></tr>';
+    } else {
+        for (const p of products) {
+            const productVariants = fullVariants.filter(v => v.productId === p.id);
+            const photoVariant = productVariants.find(v => v.photo);
+            const photoHtml = photoVariant && photoVariant.photo ? `<img src="${photoVariant.photo}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;">` : `<i data-lucide="package" style="color:var(--text-secondary)"></i>`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${photoHtml}</td>
+                <td><strong>${p.name}</strong><br><small>${p.description}</small></td>
+                <td>${p.category}</td>
+                <td>$${p.cost}</td>
+                <td style="display:flex; gap:5px;">
+                    <button class="btn btn-primary btn-sm" onclick="window.editProduct(${p.id})">
+                        <i data-lucide="edit"></i> Editar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.addVariant(${p.id})">
+                        <i data-lucide="plus"></i> Variante
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
     }
     if (window.lucide) lucide.createIcons({ root: tbody });
 }
@@ -229,7 +240,10 @@ async function renderVariantsTable() {
             <td>
                 <div id="qr-mini-${v.id}" style="width:40px;height:40px;"></div>
             </td>
-            <td>
+            <td style="display:flex; gap:5px;">
+                <button class="btn btn-primary btn-sm" onclick="window.editVariant(${v.id})" title="Editar Variante">
+                    <i data-lucide="edit"></i>
+                </button>
                 <button class="btn btn-secondary btn-sm" onclick="window.printQR('${v.sku}', '${v.product.name} - ${v.colorName}')">
                     <i data-lucide="printer"></i> QR
                 </button>
@@ -248,12 +262,159 @@ async function renderVariantsTable() {
 }
 
 // Global functions for inline onclick handlers
+window.editProduct = async (productId) => {
+    const product = await db.products.get(productId);
+    if (!product) return;
+    
+    const allVariants = await db.variants.toArray();
+    const productVariants = allVariants.filter(v => v.productId === productId);
+    const primaryVariant = productVariants.length > 0 ? productVariants[0] : null;
+
+    const modalForm = `
+        <form id="formEditProduct" style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label>Nombre del Producto</label>
+                <input type="text" id="eName" class="input-modern" value="${product.name}" required>
+            </div>
+            <div class="form-group">
+                <label>Categoría</label>
+                <input type="text" id="eCategory" class="input-modern" value="${product.category}" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Descripción</label>
+                <input type="text" id="eDesc" class="input-modern" value="${product.description || ''}">
+            </div>
+            
+            ${primaryVariant ? `
+            <div class="form-group">
+                <label>Color / Variante Principal</label>
+                <input type="text" id="eColor" class="input-modern" value="${primaryVariant.colorName}" required>
+            </div>
+            <div class="form-group">
+                <label>Stock Actual</label>
+                <input type="number" id="eStock" class="input-modern" required min="0" value="${primaryVariant.stock}">
+            </div>
+            <div class="form-group">
+                <label>Stock Mínimo (Alerta)</label>
+                <input type="number" id="eMinStock" class="input-modern" required min="1" value="${primaryVariant.minStock}">
+            </div>
+            ` : ''}
+
+            <div class="form-group">
+                <label>Costo Unitario ($)</label>
+                <input type="number" id="eCost" class="input-modern" required min="0" step="0.01" value="${product.cost}">
+            </div>
+            <div class="form-group">
+                <label>Ubicación Física</label>
+                <input type="text" id="eLocation" class="input-modern" value="${product.location || ''}">
+            </div>
+            <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; margin-top:10px;">Guardar Cambios</button>
+        </form>
+    `;
+    
+    const closeModal = openModal('modalEditProduct', 'Editar Producto', modalForm);
+    
+    document.getElementById('formEditProduct').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('eName').value;
+        const category = document.getElementById('eCategory').value;
+        const description = document.getElementById('eDesc').value;
+        const cost = parseFloat(document.getElementById('eCost').value);
+        const location = document.getElementById('eLocation').value;
+        
+        try {
+            await db.products.update(productId, { name, category, description, cost, location });
+            
+            if (primaryVariant) {
+                const colorName = document.getElementById('eColor').value;
+                const newStock = parseInt(document.getElementById('eStock').value);
+                const minStock = parseInt(document.getElementById('eMinStock').value);
+                
+                const diff = newStock - primaryVariant.stock;
+                if (diff !== 0) {
+                    await db.transactions.add({
+                        date: new Date().toISOString(), 
+                        type: diff > 0 ? 'IN' : 'OUT', 
+                        variantId: primaryVariant.id, 
+                        userId: window.getCurrentUser(), 
+                        quantity: Math.abs(diff), 
+                        comments: 'Ajuste manual (Edición Producto)'
+                    });
+                }
+                await db.variants.put({ ...primaryVariant, colorName, minStock, stock: newStock });
+            }
+
+            showToast('Producto actualizado');
+            closeModal();
+            initCatalog(); // re-render table
+        } catch (err) {
+            showToast('Error al actualizar', 'error');
+        }
+    });
+};
+
+window.editVariant = async (variantId) => {
+    const variant = await db.variants.get(variantId);
+    if (!variant) return;
+
+    const modalForm = `
+        <form id="formEditVariant">
+            <div class="form-group">
+                <label>Nombre de Variante / Color</label>
+                <input type="text" id="evColor" class="input-modern" value="${variant.colorName}" required>
+            </div>
+            <div class="form-group">
+                <label>Stock Actual</label>
+                <input type="number" id="evStock" class="input-modern" value="${variant.stock}" required min="0">
+            </div>
+            <div class="form-group">
+                <label>Stock Mínimo (Alerta)</label>
+                <input type="number" id="evMinStock" class="input-modern" value="${variant.minStock}" required min="1">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Guardar Cambios</button>
+        </form>
+    `;
+    
+    const closeModal = openModal('modalEditVariant', 'Editar Variante', modalForm);
+    
+    document.getElementById('formEditVariant').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const colorName = document.getElementById('evColor').value;
+        const newStock = parseInt(document.getElementById('evStock').value);
+        const minStock = parseInt(document.getElementById('evMinStock').value);
+        
+        try {
+            const diff = newStock - variant.stock;
+            if (diff !== 0) {
+                await db.transactions.add({
+                    date: new Date().toISOString(), 
+                    type: diff > 0 ? 'IN' : 'OUT', 
+                    variantId: variant.id, 
+                    userId: window.getCurrentUser(), 
+                    quantity: Math.abs(diff), 
+                    comments: 'Ajuste manual (Edición Variante)'
+                });
+            }
+            await db.variants.put({ ...variant, colorName, minStock, stock: newStock });
+            showToast('Variante actualizada');
+            closeModal();
+            initCatalog();
+        } catch (err) {
+            showToast('Error al actualizar', 'error');
+        }
+    });
+};
+
 window.addVariant = async (productId) => {
     const modalForm = `
         <form id="formNewVariant">
             <div class="form-group">
                 <label>Nombre de Variante / Color</label>
                 <input type="text" id="vColor" class="input-modern" required>
+            </div>
+            <div class="form-group">
+                <label>Stock Actual (Inicial)</label>
+                <input type="number" id="vStock" class="input-modern" required min="0" value="0">
             </div>
             <div class="form-group">
                 <label>Stock Mínimo (Alerta)</label>
@@ -272,6 +433,7 @@ window.addVariant = async (productId) => {
     document.getElementById('formNewVariant').addEventListener('submit', async (e) => {
         e.preventDefault();
         const colorName = document.getElementById('vColor').value;
+        const stock = parseInt(document.getElementById('vStock').value);
         const minStock = parseInt(document.getElementById('vMinStock').value);
         const fileInput = document.getElementById('vPhoto');
         let photoBase64 = '';
@@ -285,7 +447,14 @@ window.addVariant = async (productId) => {
         const sku = `PRD-${productId}-${colorName.substring(0,3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
         
         try {
-            await db.variants.add({ productId, colorName, stock: 0, minStock, sku, photo: photoBase64 });
+            const vId = await db.variants.add({ productId, colorName, stock: stock, minStock, sku, photo: photoBase64 });
+            
+            if (stock > 0) {
+                await db.transactions.add({
+                    date: new Date().toISOString(), type: 'IN', variantId: vId, userId: window.getCurrentUser(), quantity: stock, comments: 'Inventario inicial (Nueva Variante)'
+                });
+            }
+            
             showToast('Variante agregada');
             closeModal();
             initCatalog();
@@ -308,7 +477,10 @@ window.printQR = (sku, label) => {
     
     setTimeout(() => {
         window.print();
-        printArea.innerHTML = '';
+        window.addEventListener('afterprint', function onAfterPrint() {
+            printArea.innerHTML = '';
+            window.removeEventListener('afterprint', onAfterPrint);
+        });
     }, 500);
 };
 
@@ -338,8 +510,12 @@ async function printAllQRs() {
     
     setTimeout(() => {
         window.print();
-        printArea.innerHTML = '';
-    }, 1000);
+        // Listen for the print dialog to close, then clear the area
+        window.addEventListener('afterprint', function onAfterPrint() {
+            printArea.innerHTML = '';
+            window.removeEventListener('afterprint', onAfterPrint);
+        });
+    }, 1500);
 }
 
 window.initCatalog = initCatalog;

@@ -1,4 +1,3 @@
-// js/ui.js
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -70,13 +69,48 @@ function openModal(id, title, contentHTML, footerHTML = '') {
     return closeModal; // Devuelve la función para cerrar programáticamente
 }
 
-// Convert image file to base64
+// Convert image file to base64 with compression
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
+        if (!file.type.match(/image.*/)) {
+            reject(new Error("No es una imagen"));
+            return;
+        }
+
         const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
+        reader.onload = (readerEvent) => {
+            const image = new Image();
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                const MAX_HEIGHT = 800;
+                let width = image.width;
+                let height = image.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0, width, height);
+                // Reduce quality to 0.7 to save massive DB space
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            image.onerror = error => reject(error);
+            image.src = readerEvent.target.result;
+        };
         reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
     });
 }
 

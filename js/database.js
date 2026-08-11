@@ -77,6 +77,18 @@ const db = {
             const { data, error } = await supabaseClient.from('products').insert([toSnake(p)]).select('id').single();
             if (error) throw error;
             return data.id;
+        },
+        async get(id) {
+            if (!supabaseClient) return null;
+            const { data, error } = await supabaseClient.from('products').select('*').eq('id', id).single();
+            if (error) throw error;
+            return toCamel(data);
+        },
+        async update(id, updates) {
+            if (!supabaseClient) return;
+            const snakeObj = toSnake(updates);
+            const { error } = await supabaseClient.from('products').update(snakeObj).eq('id', id);
+            if (error) throw error;
         }
     },
     variants: {
@@ -203,15 +215,24 @@ async function initDB() {
 async function getFullVariants() {
     if (!supabaseClient) return [];
     try {
-        const { data: variantsData, error: vErr } = await supabaseClient.from('variants').select('*');
-        if (vErr) throw vErr;
-        
         const { data: productsData, error: pErr } = await supabaseClient.from('products').select('*');
         if (pErr) throw pErr;
 
         const productMap = {};
         productsData.forEach(p => productMap[p.id] = toCamel(p));
         
+        let variantsData = [];
+        let start = 0;
+        const step = 500; // Increased to 500 now that images are compressed, loads instantly
+        while (true) {
+            const { data, error: vErr } = await supabaseClient.from('variants').select('*').range(start, start + step - 1);
+            if (vErr) throw vErr;
+            if (!data || data.length === 0) break;
+            variantsData = variantsData.concat(data);
+            if (data.length < step) break;
+            start += step;
+        }
+
         return variantsData.map(v => {
             const camelV = toCamel(v);
             return Object.assign({}, camelV, {
