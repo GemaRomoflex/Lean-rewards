@@ -115,8 +115,8 @@ async function initCatalog() {
                     showToast('Error al registrar', 'error');
                 }
             });
-        }
-    });
+        });
+    }
 
     // Excel 
     const btnImportExcel = document.getElementById('btnImportExcel');
