@@ -46,11 +46,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             // For now, if no users table implemented yet, or user not found, auto-create a mock
             if (!user) {
                 // Determine Role
-                const isAdmin = (empId === '1231501' || empId === '4125715');
+                const isAdmin = (empId === '1231501' || empId === '4125715' || empId === '12345678');
                 const role = isAdmin ? 'admin' : 'user';
                 user = { employee_id: empId, name: 'Empleado ' + empId, points: 0, role: role };
             } else {
-                user.role = (user.employee_id === '1231501' || user.employee_id === '4125715') ? 'admin' : 'user';
+                user.role = (user.employee_id === '1231501' || user.employee_id === '4125715' || user.employee_id === '12345678') ? 'admin' : 'user';
             }
 
             currentUser = user;
