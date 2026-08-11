@@ -49,9 +49,9 @@ async function loadRewardsCatalog() {
         div.className = 'gallery-card';
         div.innerHTML = `
             <img src="${v.photo || 'https://via.placeholder.com/300?text=Premio'}" alt="Premio" />
-            <div class="gallery-card-body">
+            <div class="gallery-card-content">
                 <div class="gallery-card-title">${p.name}</div>
-                <div class="gallery-card-subtitle">${v.colorName}</div>
+                <div class="gallery-card-variant">${v.colorName}</div>
                 <div style="display:flex; justify-content:space-between; margin-top:10px; align-items:center;">
                     <span style="color:var(--primary); font-weight:bold;">
                         <i data-lucide="coins" style="width:16px;"></i> ${cost} Pts
