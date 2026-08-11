@@ -138,6 +138,9 @@ async function renderDashboard() {
     const dates = Object.keys(exitsData).sort((a,b) => new Date(a) - new Date(b));
     const exitsCount = dates.map(d => exitsData[d]);
 
+    let chartExitsInstance = Chart.getChart('chartExits');
+    if (chartExitsInstance) chartExitsInstance.destroy();
+
     const ctxExits = document.getElementById('chartExits').getContext('2d');
     chartsInstance.push(new Chart(ctxExits, {
         type: 'line',
@@ -157,6 +160,9 @@ async function renderDashboard() {
     const sortedTop = Object.entries(topProducts).sort((a,b) => b[1] - a[1]).slice(0,5);
     const topLabels = sortedTop.map(x => x[0]);
     const topValues = sortedTop.map(x => x[1]);
+
+    let chartTopInstance = Chart.getChart('chartTop');
+    if (chartTopInstance) chartTopInstance.destroy();
 
     const ctxTop = document.getElementById('chartTop').getContext('2d');
     chartsInstance.push(new Chart(ctxTop, {
