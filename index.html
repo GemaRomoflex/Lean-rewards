@@ -77,11 +77,17 @@
             </nav>
         </aside>
 
+        <!-- Sidebar Overlay (Mobile) -->
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
         <!-- Main Content Area -->
         <main class="main-content">
             <!-- Header for alerts -->
             <header class="top-header" id="topHeader">
-                <div class="breadcrumb">
+                <div class="breadcrumb" style="display:flex; align-items:center; gap:10px;">
+                    <button id="mobileMenuBtn" class="btn btn-secondary mobile-menu-btn" style="padding: 5px 10px;">
+                        <i data-lucide="menu"></i>
+                    </button>
                     <span id="currentViewTitle">Dashboard</span>
                 </div>
                 <div class="header-alerts" id="headerAlerts">

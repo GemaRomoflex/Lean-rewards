@@ -41,7 +41,22 @@ async function startAudit() {
     if (auditScanner) {
         try { await auditScanner.clear(); } catch(e) {}
     }
-    auditScanner = new Html5QrcodeScanner("audit-qr-reader", { fps: 10, qrbox: 250 }, false);
+    const config = { 
+        fps: 10, 
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            const minEdgePercentage = 0.7; 
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return { width: qrboxSize, height: qrboxSize };
+        },
+        aspectRatio: 1.0
+    };
+    
+    if (typeof Html5QrcodeSupportedFormats !== 'undefined') {
+        config.formatsToSupport = [ Html5QrcodeSupportedFormats.QR_CODE ];
+    }
+    
+    auditScanner = new Html5QrcodeScanner("audit-qr-reader", config, false);
     auditScanner.render(onAuditScanSuccess, () => {});
 }
 

@@ -18,8 +18,26 @@ async function initQR() {
         } catch(e) {}
     }
 
-    html5QrcodeScanner = new Html5QrcodeScanner(
-        "qr-reader", { fps: 10, qrbox: 250 }, false);
+    const config = { 
+        fps: 10, 
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Dynamic qrbox to fit any screen size (mobile/desktop)
+            const minEdgePercentage = 0.7; // 70% of screen
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return {
+                width: qrboxSize,
+                height: qrboxSize
+            };
+        },
+        aspectRatio: 1.0
+    };
+    
+    if (typeof Html5QrcodeSupportedFormats !== 'undefined') {
+        config.formatsToSupport = [ Html5QrcodeSupportedFormats.QR_CODE ];
+    }
+
+    html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", config, false);
     
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 }

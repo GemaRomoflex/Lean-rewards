@@ -32,6 +32,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set initial role
     document.body.setAttribute('data-role', roleSelect.value);
 
+    // Mobile Sidebar Toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('open');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+    }
+
+    if (mobileMenuBtn && sidebarOverlay) {
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+
     // Routing (Simple SPA Navigation)
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewSections = document.querySelectorAll('.view-section');
@@ -74,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const target = btn.getAttribute('data-target');
             const title = btn.textContent.trim();
             switchView(target, title);
+            if (typeof closeSidebar === 'function') closeSidebar();
         });
     });
 
