@@ -151,7 +151,7 @@ async function initCatalog() {
                     for (const row of rows) {
                         // Expected columns: Nombre, Categoría, Color, Cantidad, Costo, Ubicación
                         const name = row['Nombre'];
-                        const category = row['Categoría'] || 'Sin categoría';
+                        const category = row['Categoría'] || 'Premios Lean';
                         const color = row['Color'] || 'Único';
                         const stock = parseInt(row['Cantidad']) || 0;
                         const cost = parseFloat(row['Costo']) || 0;
