@@ -107,11 +107,15 @@ async function initCatalog() {
                     const vId = await db.variants.add({
                         productId: pId, colorName: color, stock: stock, minStock: minStock, maxStock: maxStock, sku: sku, photo: photoBase64
                     });
-                initCatalog();
-            } catch (err) {
-                showToast('Error al registrar', 'error');
-            }
-        });
+                    
+                    showToast('Producto registrado exitosamente');
+                    closeModal();
+                    initCatalog();
+                } catch (err) {
+                    showToast('Error al registrar', 'error');
+                }
+            });
+        }
     });
 
     // Excel 
