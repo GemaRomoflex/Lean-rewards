@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Determine Role
                 const isAdmin = (empId === '1231501' || empId === '4125715' || empId === '12345678');
                 const role = isAdmin ? 'admin' : 'user';
-                user = { employee_id: empId, name: 'Empleado ' + empId, points: 0, role: role };
+                user = { employee_id: empId, name: 'Empleado ' + empId, role: role };
             } else {
                 user.role = (user.employee_id === '1231501' || user.employee_id === '4125715' || user.employee_id === '12345678') ? 'admin' : 'user';
             }
@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Update UI
             document.getElementById('currentUserName').textContent = user.name;
-            document.getElementById('currentUserPoints').textContent = user.points + ' Pts';
 
             // Hide Login, Show App
             loginScreen.classList.add('hidden');
@@ -72,10 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (user.role === 'admin') {
                 document.querySelector('.nav-btn[data-target="dashboard"]').click();
             } else {
-                // Wait for rewards module or fallback to gallery
-                const rewardsBtn = document.querySelector('.nav-btn[data-target="rewards"]');
-                if (rewardsBtn) rewardsBtn.click();
-                else document.querySelector('.nav-btn[data-target="gallery"]').click();
+                document.querySelector('.nav-btn[data-target="gallery"]').click();
             }
         } catch (error) {
             loginError.textContent = 'Error al conectar con la base de datos';
@@ -151,8 +147,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         'qr-scan': () => { if(window.initQR) initQR(); },
         'audit': () => { if(window.initAudit) initAudit(); },
         'history': () => { if(window.initHistory) initHistory(); },
-        'rewards': () => { if(window.initRewards) initRewards(); },
-        'points_admin': () => { if(window.initPointsAdmin) initPointsAdmin(); },
         'providers': () => { if(window.initProviders) initProviders(); },
         'restock': () => { if(window.initRestock) initRestock(); }
     };

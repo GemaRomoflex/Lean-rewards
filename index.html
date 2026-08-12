@@ -54,7 +54,6 @@
             <div class="role-selector">
                 <label>Usuario actual:</label>
                 <div id="currentUserName" style="font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-top: 5px;"></div>
-                <div id="currentUserPoints" style="font-weight: bold; color: var(--primary); margin-top: 5px;"></div>
                 <input type="hidden" id="roleSelect" value="user" /> <!-- Hidden, we will update it via JS -->
                 <button id="btnLogout" class="btn btn-secondary btn-sm" style="margin-top: 10px; width: 100%;"><i data-lucide="log-out"></i> Cerrar sesión</button>
             </div>
@@ -77,12 +76,6 @@
                 </button>
                 <button class="nav-btn" data-target="qr-scan">
                     <i data-lucide="qr-code"></i> Escáner QR
-                </button>
-                <button class="nav-btn" data-target="rewards">
-                    <i data-lucide="gift"></i> Recompensas
-                </button>
-                <button class="nav-btn" data-target="points_admin" data-admin-only="true">
-                    <i data-lucide="coins"></i> Admon. Puntos
                 </button>
                 <button class="nav-btn" data-target="providers" data-admin-only="true">
                     <i data-lucide="truck"></i> Proveedores
@@ -166,7 +159,6 @@
                                     <th>Foto</th>
                                     <th>Producto</th>
                                     <th>Categoría</th>
-                                    <th>Costo U.</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -222,42 +214,6 @@
                 </section>
 
                 <!-- Rewards View -->
-                <section id="rewards" class="view-section hidden">
-                    <div class="view-header">
-                        <h2>Catálogo de Premios</h2>
-                    </div>
-                    <div id="rewardsGrid" class="cards-grid"></div>
-                </section>
-
-                <!-- Points Admin View -->
-                <section id="points_admin" class="view-section hidden" data-admin-only="true">
-                    <div class="view-header">
-                        <h2>Administración de Puntos</h2>
-                        <div style="display:flex; gap:10px;">
-                            <button id="btnImportUsers" class="btn btn-secondary">
-                                <i data-lucide="file-spreadsheet"></i> Importar Excel
-                            </button>
-                            <input type="file" id="fileExcelUsers" accept=".xlsx, .xls" style="display:none;">
-                            <button id="btnAddUser" class="btn btn-primary">
-                                <i data-lucide="user-plus"></i> Agregar Empleado
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <table class="modern-table">
-                            <thead>
-                                <tr>
-                                    <th>Empleado ID</th>
-                                    <th>Nombre</th>
-                                    <th>Puntos Actuales</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pointsAdminTableBody"></tbody>
-                        </table>
-                    </div>
-                </section>
-
                 <!-- Providers View -->
                 <section id="providers" class="view-section hidden" data-admin-only="true">
                     <div class="view-header">
@@ -458,10 +414,8 @@
     <script src="js/modules/qr.js?v=4"></script>
     <script src="js/modules/audit.js?v=4"></script>
     <script src="js/modules/history.js?v=4"></script>
-    <script src="js/modules/rewards.js?v=4"></script>
-    <script src="js/modules/points_admin.js?v=4"></script>
     <script src="js/modules/providers.js?v=4"></script>
     <script src="js/modules/restock.js?v=4"></script>
-    <script src="js/app.js?v=4"></script>
+    <script src="js/app.js?v=5"></script>
 </body>
 </html>

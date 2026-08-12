@@ -57,14 +57,6 @@ async function initCatalog() {
                         <input type="text" id="pColor" class="input-modern" required>
                     </div>
                     <div class="form-group">
-                        <label>Costo Monetario ($)</label>
-                        <input type="number" id="pCost" class="input-modern" value="0" min="0" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label>Costo en Puntos (Si es Premio)</label>
-                        <input type="number" id="pPointsCost" class="input-modern" value="0" min="0">
-                    </div>
-                    <div class="form-group">
                         <label>Cantidad Inicial</label>
                         <input type="number" id="pStock" class="input-modern" required min="0">
                     </div>
@@ -97,8 +89,7 @@ async function initCatalog() {
                 const description = document.getElementById('pDesc').value;
                 const providerId = parseInt(document.getElementById('pProvider').value) || null;
                 const color = document.getElementById('pColor').value;
-                const cost = parseFloat(document.getElementById('pCost').value) || 0;
-                const pointsCost = parseInt(document.getElementById('pPointsCost').value) || 0;
+
                 const stock = parseInt(document.getElementById('pStock').value) || 0;
                 const minStock = parseInt(document.getElementById('pMinStock').value) || 1;
                 const maxStock = parseInt(document.getElementById('pMaxStock').value) || 50;
@@ -113,7 +104,7 @@ async function initCatalog() {
                 }
                 
                 try {
-                    const pId = await db.products.add({ name, category, description, providerId, cost, pointsCost, location, status: 'Disponible' });
+                    const pId = await db.products.add({ name, category, description, providerId, location, status: 'Disponible' });
                     
                     const sku = `PRD-${pId}-${color.substring(0,3).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
                     const vId = await db.variants.add({
@@ -161,28 +152,27 @@ async function initCatalog() {
                     
                     let imported = 0;
                     for (const row of rows) {
-                        // Expected columns: Nombre, Categoría, Color, Cantidad, Costo, Ubicación
-                        const name = row['Nombre'];
-                        const category = row['Categoría'] || 'Premios Lean';
-                        const color = row['Color'] || 'Único';
-                        const stock = parseInt(row['Cantidad']) || 0;
-                        const cost = parseFloat(row['Costo']) || 0;
+                        // Expected columns: Nombre, Categoría, Color, Cantidad, Ubicación
+                        const name = row['Nombre']?.toString().trim();
+                        if (!name) continue;
+                        
+                        const color = row['Color']?.toString().trim() || 'Único';
+                        const qty = parseInt(row['Cantidad'] || row['Stock'] || 0) || 0;
+                        const catName = row['Categoría']?.toString().trim() || 'Premios Lean';
                         const location = row['Ubicación'] || '';
                         
-                        if (!name) continue; // Skip if no name
-                        
                         const pId = await db.products.add({ 
-                            name, category, description: '', provider: '', cost, location, status: 'Disponible' 
+                            name, category: catName, description: '', provider: '', location, status: 'Disponible' 
                         });
                         
                         const sku = `PRD-${pId}-${color.substring(0,3).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
                         const vId = await db.variants.add({
-                            productId: pId, colorName: color, stock: stock, minStock: 10, sku: sku, photo: ''
+                            productId: pId, colorName: color, stock: qty, minStock: 10, sku: sku, photo: ''
                         });
                         
-                        if (stock > 0) {
+                        if (qty > 0) {
                             await db.transactions.add({
-                                date: new Date().toISOString(), type: 'IN', variantId: vId, userId: window.getCurrentUser(), quantity: stock, comments: 'Importación Excel'
+                                date: new Date().toISOString(), type: 'IN', variantId: vId, userId: window.getCurrentUser(), quantity: qty, comments: 'Importación Excel'
                             });
                         }
                         imported++;
@@ -238,7 +228,7 @@ async function renderCatalogTable() {
                 <td>${photoHtml}</td>
                 <td><strong>${p.name}</strong><br><small>${p.description}</small></td>
                 <td>${p.category}</td>
-                <td>$${p.cost}</td>
+
                 <td style="display:flex; gap:5px;">
                     <button class="btn btn-primary btn-sm" onclick="window.editProduct(${p.id})">
                         <i data-lucide="edit"></i> Editar
@@ -366,14 +356,6 @@ window.editProduct = async (productId) => {
             </div>
             ` : ''}
 
-            <div class="form-group">
-                <label>Costo Monetario ($)</label>
-                <input type="number" id="eCost" class="input-modern" required min="0" step="0.01" value="${product.cost || 0}">
-            </div>
-            <div class="form-group">
-                <label>Costo en Puntos</label>
-                <input type="number" id="ePointsCost" class="input-modern" required min="0" value="${product.pointsCost || 0}">
-            </div>
             <div class="form-group" style="grid-column: 1 / -1;">
                 <label>Ubicación Física</label>
                 <input type="text" id="eLocation" class="input-modern" value="${product.location || ''}">
@@ -390,8 +372,7 @@ window.editProduct = async (productId) => {
         const category = document.getElementById('eCategory').value;
         const description = document.getElementById('eDesc').value;
         const providerId = parseInt(document.getElementById('eProvider').value) || null;
-        const cost = parseFloat(document.getElementById('eCost').value) || 0;
-        const pointsCost = parseInt(document.getElementById('ePointsCost').value) || 0;
+
         const location = document.getElementById('eLocation').value;
         
         try {
@@ -400,8 +381,7 @@ window.editProduct = async (productId) => {
             product.category = category;
             product.description = description;
             product.providerId = providerId;
-            product.cost = cost;
-            product.pointsCost = pointsCost;
+
             product.location = location;
             
             await db.products.put(product);

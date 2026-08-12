@@ -221,16 +221,6 @@ const db = {
             return !error;
         }
     },
-    point_transactions: {
-        async add(record) {
-            const { error } = await supabaseClient.from('point_transactions').insert(toSnake(record));
-            return !error;
-        },
-        async toArray() {
-            const { data } = await supabaseClient.from('point_transactions').select('*').order('created_at', { ascending: false });
-            return data ? data.map(toCamel) : [];
-        }
-    },
     async transaction(mode, t1, t2, fn) {
         return await fn();
     }

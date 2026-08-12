@@ -56,24 +56,9 @@ async function renderDashboard() {
             <i class="kpi-icon" data-lucide="package" style="width:40px;height:40px;"></i>
         </div>
         <div class="kpi-card">
-            <span class="kpi-title">Valor del Inventario</span>
-            <span class="kpi-value" id="kpiTotalValue">$-</span>
-            <i class="kpi-icon" data-lucide="dollar-sign" style="width:40px;height:40px;"></i>
-        </div>
-        <div class="kpi-card">
             <span class="kpi-title">Agotados / Críticos</span>
             <span class="kpi-value" id="kpiCritical" style="color:var(--danger)">-</span>
             <i class="kpi-icon" data-lucide="alert-octagon" style="width:40px;height:40px;color:var(--danger);"></i>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-title">Puntos Otorgados</span>
-            <span class="kpi-value" id="kpiPointsGiven">0</span>
-            <i class="kpi-icon" data-lucide="gift" style="width:40px;height:40px;color:var(--success);"></i>
-        </div>
-        <div class="kpi-card">
-            <span class="kpi-title">Puntos Canjeados</span>
-            <span class="kpi-value" id="kpiPointsRedeemed">0</span>
-            <i class="kpi-icon" data-lucide="shopping-bag" style="width:40px;height:40px;color:var(--primary);"></i>
         </div>
         
         <div class="charts-container" style="grid-column: 1 / -1;">
@@ -92,28 +77,15 @@ async function renderDashboard() {
     // Fetch Data
     const fullVariants = await getFullVariants();
     const transactions = await db.transactions.toArray();
-    const pointTxs = await db.point_transactions.toArray();
     
     // Calculate KPIs
-    let totalValue = 0;
     let criticalCount = 0;
     fullVariants.forEach(v => {
-        totalValue += v.stock * (v.product.cost || 0);
         if (v.stock <= 0 || v.stock <= (v.minStock || 0)) criticalCount++;
     });
     
-    let ptsGiven = 0;
-    let ptsRedeemed = 0;
-    pointTxs.forEach(tx => {
-        if (tx.type === 'ADD') ptsGiven += tx.amount;
-        else if (tx.type === 'REDEEM') ptsRedeemed += tx.amount;
-    });
-    
     document.getElementById('kpiTotalProducts').textContent = fullVariants.length;
-    document.getElementById('kpiTotalValue').textContent = '$' + totalValue.toLocaleString();
     document.getElementById('kpiCritical').textContent = criticalCount;
-    document.getElementById('kpiPointsGiven').textContent = ptsGiven;
-    document.getElementById('kpiPointsRedeemed').textContent = ptsRedeemed;
 
     // Charts
     const exitsData = {};
