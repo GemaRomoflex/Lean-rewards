@@ -117,6 +117,8 @@ async function renderDashboard() {
     const exitsCount = dates.map(d => exitsData[d]);
 
     const ctxExits = document.getElementById('chartExits').getContext('2d');
+    if (Chart.getChart(ctxExits.canvas)) Chart.getChart(ctxExits.canvas).destroy();
+    
     chartsInstance.push(new Chart(ctxExits, {
         type: 'line',
         data: {
@@ -137,6 +139,8 @@ async function renderDashboard() {
     const topValues = sortedTop.map(x => x[1]);
 
     const ctxTop = document.getElementById('chartTop').getContext('2d');
+    if (Chart.getChart(ctxTop.canvas)) Chart.getChart(ctxTop.canvas).destroy();
+    
     chartsInstance.push(new Chart(ctxTop, {
         type: 'bar',
         data: {
