@@ -107,15 +107,12 @@ function exportRestockExcel() {
             ["Proveedor:", provider],
             ["Fecha:", today],
             [],
-            ["Producto", "Stock Actual", "Mínimo", "Máximo", "Cantidad a Comprar", "Lead Time (Días)"]
+            ["Producto", "Cantidad a Comprar", "Lead Time (Días)"]
         ];
         
         items.forEach(item => {
             data.push([
                 item.productName,
-                item.stock,
-                item.min,
-                item.max,
                 item.suggestion,
                 item.leadTime
             ]);
