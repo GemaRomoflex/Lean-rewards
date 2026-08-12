@@ -74,9 +74,6 @@
                 <button class="nav-btn" data-target="exits">
                     <i data-lucide="arrow-up-right"></i> Salidas (Premios)
                 </button>
-                <button class="nav-btn" data-target="qr-scan">
-                    <i data-lucide="qr-code"></i> Escáner QR
-                </button>
                 <button class="nav-btn" data-target="providers" data-admin-only="true">
                     <i data-lucide="truck"></i> Proveedores
                 </button>
@@ -267,7 +264,13 @@
                     <div class="view-header">
                         <h2>Registrar Entradas (Compras/Reposición)</h2>
                     </div>
-                    <div class="card-form">
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <button class="btn btn-primary" id="btnEntryManual">Registro Manual</button>
+                        <button class="btn btn-secondary" id="btnEntryQR">
+                            <i data-lucide="qr-code"></i> Registro por Scanner
+                        </button>
+                    </div>
+                    <div class="card-form" id="entryFormContainer">
                         <form id="entryForm">
                             <div class="form-group">
                                 <label>Producto / Variante</label>
@@ -289,12 +292,15 @@
                 <!-- View: Exits (Salidas) -->
                 <section id="exits" class="view-section hidden">
                     <div class="view-header">
-                        <h2>Registrar Salida (Entregar Premio)</h2>
-                        <button id="btnExitByQR" class="btn btn-secondary">
-                            <i data-lucide="qr-code"></i> Usar Escáner QR
+                        <h2>Registrar Salida (Descontar Inventario)</h2>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <button class="btn btn-primary" id="btnExitManual">Registro Manual</button>
+                        <button class="btn btn-secondary" id="btnExitQR">
+                            <i data-lucide="qr-code"></i> Registro por Scanner
                         </button>
                     </div>
-                    <div class="card-form">
+                    <div class="card-form" id="exitFormContainer">
                         <form id="exitForm">
                             <div class="form-group">
                                 <label>Selección Manual</label>
@@ -316,10 +322,13 @@
                 <!-- View: QR Scan -->
                 <section id="qr-scan" class="view-section hidden">
                     <div class="view-header">
-                        <h2>Escáner QR (Transacción Rápida)</h2>
+                        <h2>Escáner QR</h2>
+                        <button class="btn btn-secondary" id="btnBackFromQR">
+                            <i data-lucide="arrow-left"></i> Regresar
+                        </button>
                     </div>
                     <div class="qr-scanner-container">
-                        <p style="text-align:center; margin-bottom: 20px;">Escanea el código QR de un SKU para realizar un retiro rápido.</p>
+                        <p style="text-align:center; margin-bottom: 20px;">Escanea el código QR de un SKU para realizar la transacción.</p>
                         <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);"></div>
                         <div id="qr-result" class="qr-result-card hidden">
                             <!-- Injected after successful scan -->

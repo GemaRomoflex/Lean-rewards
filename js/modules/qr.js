@@ -4,6 +4,28 @@
 
 
 let html5QrcodeScanner = null;
+window.qrScanMode = 'OUT'; // Default a OUT
+
+window.openQRScanner = (mode) => {
+    window.qrScanMode = mode;
+    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById('qr-scan').classList.remove('hidden');
+    window.initQR();
+};
+
+document.getElementById('btnBackFromQR')?.addEventListener('click', () => {
+    // Stop scanner if running
+    if (html5QrcodeScanner) {
+        try { html5QrcodeScanner.pause(true); } catch(e) {}
+    }
+    // Return to the view based on mode
+    document.getElementById('qr-scan').classList.add('hidden');
+    if (window.qrScanMode === 'IN') {
+        document.getElementById('entries').classList.remove('hidden');
+    } else {
+        document.getElementById('exits').classList.remove('hidden');
+    }
+});
 
 async function initQR() {
     const readerElement = document.getElementById('qr-reader');
@@ -70,6 +92,11 @@ async function onScanSuccess(decodedText, decodedResult) {
     if (variant.stock <= 0) stockClass = 'stock-out';
     else if (variant.stock <= variant.minStock) stockClass = 'stock-low';
 
+    const modeText = window.qrScanMode === 'IN' ? 'Cantidad a ingresar:' : 'Cantidad a retirar:';
+    const btnText = window.qrScanMode === 'IN' ? 'Agregar' : 'Descontar';
+    const btnClass = window.qrScanMode === 'IN' ? 'btn-success' : 'btn-danger';
+    const maxAttr = window.qrScanMode === 'OUT' ? `max="${variant.stock}"` : '';
+
     resultCard.innerHTML = `
         <div style="display:flex; gap: 20px; align-items:flex-start;">
             ${variant.photo ? `<img src="${variant.photo}" alt="Foto" style="width:100px; height:100px; object-fit:cover; border-radius:8px;">` : `<div style="width:100px;height:100px;background:#eee;border-radius:8px;"></div>`}
@@ -82,18 +109,18 @@ async function onScanSuccess(decodedText, decodedResult) {
                     <strong style="font-size:1.2rem;" class="${stockClass === 'stock-out' ? 'badge-danger' : ''}">${variant.stock}</strong>
                 </div>
                 
-                ${variant.stock > 0 ? `
+                ${(window.qrScanMode === 'IN' || variant.stock > 0) ? `
                 <div class="form-group">
-                    <label>Cantidad a retirar (Mejora Lean):</label>
-                    <input type="number" id="qrQty" class="input-modern" value="1" min="1" max="${variant.stock}">
+                    <label>${modeText}</label>
+                    <input type="number" id="qrQty" class="input-modern" value="1" min="1" ${maxAttr}>
                 </div>
                 <div class="form-group">
                     <label>Motivo:</label>
-                    <input type="text" id="qrComments" class="input-modern" placeholder="Ej. Premio mensual">
+                    <input type="text" id="qrComments" class="input-modern" placeholder="Ej. Transacción por código QR">
                 </div>
                 <div style="display:flex; gap:10px; justify-content:flex-end;">
                     <button class="btn btn-secondary" onclick="window.resumeScan()">Cancelar</button>
-                    <button class="btn btn-danger" onclick="window.confirmQRScan(${variant.id})">Descontar</button>
+                    <button class="btn ${btnClass}" onclick="window.confirmQRScan(${variant.id})">${btnText}</button>
                 </div>
                 ` : `
                 <div class="badge badge-danger" style="display:block; text-align:center; padding: 10px;">Producto Agotado</div>
@@ -117,9 +144,9 @@ window.resumeScan = () => {
 
 window.confirmQRScan = async (variantId) => {
     const qty = document.getElementById('qrQty').value;
-    const comments = document.getElementById('qrComments').value || 'Retiro por QR (Mejora Lean)';
+    const comments = document.getElementById('qrComments').value || 'Transacción por QR';
     
-    const success = await processTransaction('OUT', variantId.toString(), qty, comments);
+    const success = await processTransaction(window.qrScanMode, variantId.toString(), qty, comments);
     
     if (success) {
         window.resumeScan();

@@ -13,6 +13,14 @@ async function initInventory(type) {
             );
             form.reset();
         };
+
+        document.getElementById('btnEntryManual').onclick = () => {
+            document.getElementById('entryFormContainer').classList.remove('hidden');
+        };
+        document.getElementById('btnEntryQR').onclick = () => {
+            window.openQRScanner('IN');
+        };
+
     } else if (type === 'exits') {
         await populateSelect('exitVariantSelect');
         const form = document.getElementById('exitForm');
@@ -26,9 +34,11 @@ async function initInventory(type) {
             form.reset();
         };
         
-        const btnExitByQR = document.getElementById('btnExitByQR');
-        btnExitByQR.onclick = () => {
-            document.querySelector('.nav-btn[data-target="qr-scan"]').click();
+        document.getElementById('btnExitManual').onclick = () => {
+            document.getElementById('exitFormContainer').classList.remove('hidden');
+        };
+        document.getElementById('btnExitQR').onclick = () => {
+            window.openQRScanner('OUT');
         };
     }
 }
