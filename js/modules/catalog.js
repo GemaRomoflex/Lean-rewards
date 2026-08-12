@@ -360,6 +360,14 @@ window.editProduct = async (productId) => {
                 <label>Ubicación Física</label>
                 <input type="text" id="eLocation" class="input-modern" value="${product.location || ''}">
             </div>
+            
+            ${primaryVariant ? `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Actualizar Fotografía (Opcional)</label>
+                <input type="file" id="ePhoto" class="input-modern" accept="image/*">
+            </div>
+            ` : ''}
+            
             <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; margin-top:10px;">Guardar Cambios</button>
         </form>
     `;
@@ -399,6 +407,15 @@ window.editProduct = async (productId) => {
                 primaryVariant.stock = stock;
                 primaryVariant.minStock = minStock;
                 primaryVariant.maxStock = maxStock;
+                
+                const fileInput = document.getElementById('ePhoto');
+                if (fileInput && fileInput.files.length > 0) {
+                    try { 
+                        primaryVariant.photo = await fileToBase64(fileInput.files[0]); 
+                    } catch(err) { 
+                        showToast('Error al leer imagen', 'error'); 
+                    }
+                }
                 
                 await db.variants.put(primaryVariant);
                 
