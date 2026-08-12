@@ -66,7 +66,7 @@ async function initCatalog() {
                     </div>
                     <div class="form-group">
                         <label>Stock Máximo</label>
-                        <input type="number" id="pMaxStock" class="input-modern" required min="1" value="50">
+                        <input type="number" id="pMaxStock" class="input-modern" required min="1" value="20">
                     </div>
                     <div class="form-group">
                         <label>Ubicación Física</label>
@@ -92,7 +92,7 @@ async function initCatalog() {
 
                 const stock = parseInt(document.getElementById('pStock').value) || 0;
                 const minStock = parseInt(document.getElementById('pMinStock').value) || 1;
-                const maxStock = parseInt(document.getElementById('pMaxStock').value) || 50;
+                const maxStock = parseInt(document.getElementById('pMaxStock').value) || 20;
                 const location = document.getElementById('pLocation').value;
                 
                 const fileInput = document.getElementById('pPhoto');
@@ -352,7 +352,7 @@ window.editProduct = async (productId) => {
             </div>
             <div class="form-group">
                 <label>Stock Máximo</label>
-                <input type="number" id="eMaxStock" class="input-modern" required min="1" value="${primaryVariant.maxStock || 50}">
+                <input type="number" id="eMaxStock" class="input-modern" required min="1" value="${primaryVariant.maxStock || 20}">
             </div>
             ` : ''}
 
@@ -524,6 +524,10 @@ window.addVariant = async (productId) => {
             <div class="form-group">
                 <label>Stock Mínimo (Alerta)</label>
                 <input type="number" id="vMinStock" class="input-modern" required min="1" value="10">
+            </div>
+            <div class="form-group">
+                <label>Stock Máximo</label>
+                <input type="number" id="nvMaxStock" class="input-modern" required min="1" value="20">
             </div>
             <div class="form-group">
                 <label>Fotografía (Opcional)</label>
