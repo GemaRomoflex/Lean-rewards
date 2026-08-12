@@ -41,10 +41,12 @@ async function updateAlertsHeader() {
 
 async function renderDashboard() {
     // Clear previous charts
-    if (window.Chart && Chart.instances) {
-        for (let id in Chart.instances) {
-            Chart.instances[id].destroy();
-        }
+    if (window.Chart) {
+        let oldExits = Chart.getChart('chartExits');
+        if (oldExits) oldExits.destroy();
+        
+        let oldTop = Chart.getChart('chartTop');
+        if (oldTop) oldTop.destroy();
     }
     chartsInstance = [];
     
