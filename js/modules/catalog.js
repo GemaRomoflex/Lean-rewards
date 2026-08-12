@@ -448,7 +448,7 @@ window.editVariant = async (variantId) => {
     if (!variant) return;
 
     const modalForm = `
-        <form id="formEditVariant">
+        <form id="formEditVariant" style="display:grid; grid-template-columns: 1fr; gap:15px;">
             <div class="form-group">
                 <label>Nombre de Variante / Color</label>
                 <input type="text" id="evColor" class="input-modern" value="${variant.colorName}" required>
@@ -460,6 +460,10 @@ window.editVariant = async (variantId) => {
             <div class="form-group">
                 <label>Stock Mínimo (Alerta)</label>
                 <input type="number" id="evMinStock" class="input-modern" value="${variant.minStock}" required min="1">
+            </div>
+            <div class="form-group">
+                <label>Actualizar Fotografía (Opcional)</label>
+                <input type="file" id="evPhoto" class="input-modern" accept="image/*">
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">Guardar Cambios</button>
         </form>
@@ -485,7 +489,18 @@ window.editVariant = async (variantId) => {
                     comments: 'Ajuste manual (Edición Variante)'
                 });
             }
-            await db.variants.put({ ...variant, colorName, minStock, stock: newStock });
+            
+            let photo = variant.photo;
+            const fileInput = document.getElementById('evPhoto');
+            if (fileInput && fileInput.files.length > 0) {
+                try { 
+                    photo = await fileToBase64(fileInput.files[0]); 
+                } catch(err) { 
+                    showToast('Error al leer imagen', 'error'); 
+                }
+            }
+            
+            await db.variants.put({ ...variant, colorName, minStock, stock: newStock, photo });
             showToast('Variante actualizada');
             closeModal();
             initCatalog();
